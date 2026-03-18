@@ -11,11 +11,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
+const tenant_middleware_1 = require("./common/middleware/tenant.middleware");
 const config_1 = require("@nestjs/config");
 const configuration_1 = __importDefault(require("./config/configuration"));
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_config_1 = require("./config/typeorm.config");
+const tenant_module_1 = require("./modules/tenant/tenant.module");
+const rls_subscriber_1 = require("./database/rls.subscriber");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(tenant_middleware_1.TenantMiddleware).forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
@@ -26,7 +32,9 @@ exports.AppModule = AppModule = __decorate([
                 load: [configuration_1.default],
             }),
             typeorm_1.TypeOrmModule.forRoot((0, typeorm_config_1.getTypeOrmConfig)()),
+            tenant_module_1.TenantModule,
         ],
+        providers: [rls_subscriber_1.RlsSubscriber],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

@@ -8,9 +8,9 @@ const getTypeOrmConfig = () => ({
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    entities: [__dirname + '/../**/*.entity.{ts,js}'],
+    entities: [__dirname + '/../modules/**/*.entity.{ts,js}'],
     migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
-    synchronize: false,
+    synchronize: true,
     logging: true,
 });
 exports.getTypeOrmConfig = getTypeOrmConfig;
