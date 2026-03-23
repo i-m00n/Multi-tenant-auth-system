@@ -1,18 +1,33 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req } from '@nestjs/common';
 import type { TenantRequest } from 'src/types/tenant-request.interface';
 import { TenantService } from './tenant.service';
+import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
+import * as tenantSchemas from './tenant.schemas';
 
-@Controller(':tenant/api/test')
+@Controller()
 export class TenantController {
   constructor(private tenantService: TenantService) {}
 
-  @Get()
+  @Get(':tenant/api/test')
   testTenant(@Req() req: TenantRequest) {
-    // req.tenant comes from middleware
     return { tenant: req.tenant };
   }
-  @Get('id')
+
+  @Get(':tenant/api/test/id')
   getTenantId() {
     return { tenantId: this.tenantService.getTenantId() };
+  }
+
+  @Post('tenants')
+  create(
+    @Body(new ZodValidationPipe(tenantSchemas.CreateTenantSchema))
+    dto: tenantSchemas.CreateTenantDto,
+  ) {
+    return this.tenantService.create(dto);
+  }
+
+  @Get('tenants/:slug')
+  findBySlug(@Param('slug') slug: string) {
+    return this.tenantService.findBySlug(slug);
   }
 }

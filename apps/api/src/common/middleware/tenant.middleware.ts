@@ -4,6 +4,8 @@ import { Request, Response, NextFunction } from 'express';
 import { TenantRequest } from 'src/types/tenant-request.interface';
 import { TenantContext } from '@modules/tenant/tenant-context.service';
 
+const PUBLIC_ROUTES = ['/tenants'];
+
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
   constructor(
@@ -12,6 +14,11 @@ export class TenantMiddleware implements NestMiddleware {
   ) {}
 
   async use(req: TenantRequest, res: Response, next: NextFunction) {
+    const isPublic = PUBLIC_ROUTES.some((route) =>
+      req.originalUrl.startsWith(route),
+    );
+    if (isPublic) return next();
+
     const parts = req.originalUrl.split('/');
     const slug = parts[1];
 

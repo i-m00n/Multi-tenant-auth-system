@@ -21,5 +21,8 @@
   "bugs": {
     "url": "https://github.com/i-m00n/Multi-tenant-auth-system/issues"
   },
-  "homepage": "https://github.com/i-m00n/Multi-tenant-auth-system#readme"
+  "homepage": "https://github.com/i-m00n/Multi-tenant-auth-system#readme",
+  "dependencies": {
+    "argon2": "^0.44.0"
+  }
 }
