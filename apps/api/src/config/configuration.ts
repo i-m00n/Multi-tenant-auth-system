@@ -17,5 +17,10 @@ export default () => {
     jwt: {
       secret: parsed.JWT_SECRET,
     },
+    argon2: {
+      memoryCost: parsed.ARGON2_MEMORY_COST,
+      timeCost: parsed.ARGON2_TIME_COST,
+      parallelism: parsed.ARGON2_PARALLELISM,
+    },
   };
 };

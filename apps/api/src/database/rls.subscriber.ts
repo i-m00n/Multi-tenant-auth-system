@@ -17,8 +17,17 @@ export class RlsSubscriber implements EntitySubscriberInterface {
   async beforeQuery(event: BeforeQueryEvent<any>) {
     const tenantId = this.tenantContext?.getTenantId();
     if (!tenantId || !event.queryRunner) return;
-    await event.queryRunner.query(`SET LOCAL app.current_tenant_id = $1`, [
-      tenantId,
-    ]);
+
+    // Guard: skip if this query IS the SET LOCAL itself
+    if (
+      typeof event.query === 'string' &&
+      event.query.trimStart().toUpperCase().startsWith('SET')
+    ) {
+      return;
+    }
+
+    await event.queryRunner.query(
+      `SET LOCAL app.current_tenant_id = '${tenantId}'`,
+    );
   }
 }

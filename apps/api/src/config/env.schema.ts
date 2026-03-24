@@ -12,4 +12,8 @@ export const envSchema = z.object({
   DB_NAME: z.string(),
 
   JWT_SECRET: z.string(),
+
+  ARGON2_MEMORY_COST: z.coerce.number().default(2 ** 16), // 64 MiB
+  ARGON2_TIME_COST: z.coerce.number().default(3),
+  ARGON2_PARALLELISM: z.coerce.number().default(4),
 });

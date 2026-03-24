@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { getTypeOrmConfig } from './config/typeorm.config';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { RlsSubscriber } from './database/rls.subscriber';
+import { UserModule } from './modules/user/user.module';
+import { RbacModule } from './modules/rbac/rbac.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { RlsSubscriber } from './database/rls.subscriber';
     }),
     TypeOrmModule.forRoot(getTypeOrmConfig()),
     TenantModule,
+    UserModule,
+    RbacModule,
   ],
   providers: [RlsSubscriber],
 })
