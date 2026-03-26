@@ -12,6 +12,8 @@ export const envSchema = z.object({
   DB_NAME: z.string(),
 
   JWT_SECRET: z.string(),
+  JWT_ACCESS_TOKEN_EXPIRY: z.string().default('15m'),
+  JWT_REFRESH_TOKEN_EXPIRY_DAYS: z.coerce.number().default(7),
 
   ARGON2_MEMORY_COST: z.coerce.number().default(2 ** 16), // 64 MiB
   ARGON2_TIME_COST: z.coerce.number().default(3),

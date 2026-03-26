@@ -8,6 +8,10 @@ export class UserRepository extends Repository<UserEntity> {
     super(UserEntity, dataSource.createEntityManager());
   }
 
+  findOneById(id: string) {
+    return this.findOne({ where: { id, isActive: true } });
+  }
+
   findByEmail(email: string, tenantId: string) {
     return this.findOne({ where: { email, tenantId, isActive: true } });
   }

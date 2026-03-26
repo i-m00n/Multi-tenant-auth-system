@@ -11,6 +11,6 @@ import { TenantModule } from '../tenant/tenant.module';
   imports: [TypeOrmModule.forFeature([UserEntity]), RbacModule, TenantModule],
   controllers: [UserController],
   providers: [UserService, UserRepository],
-  exports: [UserService],
+  exports: [UserService, UserRepository],
 })
 export class UserModule {}
