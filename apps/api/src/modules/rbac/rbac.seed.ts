@@ -1,64 +1,58 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { PERMISSIONS } from './permissions.constants';
-import { RbacRepository } from './rbac.repository';
+import { RoleEntity } from './role.entity';
 import { PermissionEntity } from './permission.entity';
 
 @Injectable()
 export class RbacSeed {
-  private permissionRepo: Repository<PermissionEntity>;
-
-  constructor(
-    @InjectDataSource() private dataSource: DataSource,
-    private rbacRepository: RbacRepository,
-  ) {
-    this.permissionRepo = dataSource.getRepository(PermissionEntity);
-  }
+  constructor(@InjectDataSource() private dataSource: DataSource) {}
 
   async seedPermissions(): Promise<void> {
+    const permissionRepo = this.dataSource.getRepository(PermissionEntity);
+
     for (const name of Object.values(PERMISSIONS)) {
       const [resource, action] = name.split(':');
-      const exists = await this.permissionRepo.existsBy({ name });
+      const exists = await permissionRepo.existsBy({ name });
       if (!exists) {
-        await this.permissionRepo.save(
-          this.permissionRepo.create({ name, resource, action }),
+        await permissionRepo.save(
+          permissionRepo.create({ name, resource, action }),
         );
       }
     }
   }
 
   async seedRolesForTenant(tenantId: string): Promise<void> {
-    const allPermissions = await this.permissionRepo.find();
+    return this.dataSource.transaction(async (manager) => {
+      const roleRepo = manager.getRepository(RoleEntity);
+      const permRepo = manager.getRepository(PermissionEntity);
 
-    // Create admin role and assign all permissions
-    const adminRole = await this.rbacRepository.createRole({
-      name: 'admin',
-      tenantId,
-      isSystem: true,
-    });
+      const allPermissions = await permRepo.find();
+      const readPermissions = allPermissions.filter((p) => p.action === 'read');
 
-    await this.dataSource.query(
-      `INSERT INTO role_permissions (role_id, permission_id)
-       SELECT $1, id FROM permissions
-       ON CONFLICT DO NOTHING`,
-      [adminRole.id],
-    );
-
-    // Create viewer role and assign only read permissions
-    const viewerRole = await this.rbacRepository.createRole({
-      name: 'viewer',
-      tenantId,
-      isSystem: true,
-    });
-
-    const readPermissions = allPermissions.filter((p) => p.action === 'read');
-    for (const perm of readPermissions) {
-      await this.dataSource.query(
-        `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)
-         ON CONFLICT DO NOTHING`,
-        [viewerRole.id, perm.id],
+      const adminRole = await roleRepo.save(
+        roleRepo.create({ name: 'admin', tenantId, isSystem: true }),
       );
-    }
+
+      await manager.query(
+        `INSERT INTO role_permissions (role_id, permission_id)
+         SELECT $1, id FROM permissions
+         ON CONFLICT DO NOTHING`,
+        [adminRole.id],
+      );
+
+      const viewerRole = await roleRepo.save(
+        roleRepo.create({ name: 'viewer', tenantId, isSystem: true }),
+      );
+
+      for (const perm of readPermissions) {
+        await manager.query(
+          `INSERT INTO role_permissions (role_id, permission_id)
+           VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [viewerRole.id, perm.id],
+        );
+      }
+    });
   }
 }

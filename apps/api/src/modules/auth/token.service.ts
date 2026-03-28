@@ -2,19 +2,22 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'crypto';
+import { DataSource, EntityManager } from 'typeorm';
 import { RefreshTokenRepository } from './refresh-token.repository';
+import { RefreshTokenEntity } from './refresh-token.entity';
 import type { StringValue } from 'ms';
 
 export interface JwtPayload {
-  sub: string; // userId
+  sub: string;
   email: string;
   tenantId: string;
-  familyId: string; // session identifier - same for the whole refresh family
+  familyId: string;
 }
 
 @Injectable()
 export class TokenService {
   constructor(
+    private dataSource: DataSource,
     private jwtService: JwtService,
     private configService: ConfigService,
     private refreshTokenRepository: RefreshTokenRepository,
@@ -32,6 +35,7 @@ export class TokenService {
     userId: string,
     tenantId: string,
     familyId: string,
+    manager?: EntityManager,
   ): Promise<string> {
     const rawToken = randomUUID();
     const tokenHash = this.hashToken(rawToken);
@@ -39,18 +43,23 @@ export class TokenService {
     const expiresAt = new Date();
     expiresAt.setDate(
       expiresAt.getDate() +
-        this.configService.getOrThrow<number>('jwt.refreshTokenExpiryDays'), // 7
+        this.configService.getOrThrow<number>('jwt.refreshTokenExpiryDays'),
     );
 
-    await this.refreshTokenRepository.createToken({
-      tokenHash,
-      familyId,
-      userId,
-      tenantId,
-      expiresAt,
-    });
+    const tokenRepo = manager
+      ? manager.getRepository(RefreshTokenEntity)
+      : this.refreshTokenRepository;
 
-    return rawToken; // return raw - only time it's ever in plaintext
+    await tokenRepo.save(
+      tokenRepo.create({
+        tokenHash,
+        familyId,
+        userId,
+        tenantId,
+        expiresAt,
+      }),
+    );
+    return rawToken;
   }
 
   async rotateRefreshToken(
@@ -58,52 +67,55 @@ export class TokenService {
     tenantId: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const tokenHash = this.hashToken(rawToken);
-    const stored = await this.refreshTokenRepository.findByTokenHash(tokenHash);
 
-    if (!stored) {
-      // token not found - could be expired or never existed
-      // check if this hash belongs to a revoked token (replay attack)
-      const maybeRevoked = await this.refreshTokenRepository.findOne({
-        where: { tokenHash },
+    return this.dataSource.transaction(async (manager) => {
+      const tokenRepo = manager.getRepository(RefreshTokenEntity);
+
+      const stored = await tokenRepo.findOne({
+        where: { tokenHash, isRevoked: false },
       });
 
-      if (maybeRevoked) {
-        // token exists but is revoked → REPLAY ATTACK
-        // kill the entire session family immediately
-        await this.refreshTokenRepository.revokeFamilyById(
-          maybeRevoked.familyId,
-        );
-        throw new UnauthorizedException(
-          'Token reuse detected. Session terminated.',
-        );
+      if (!stored) {
+        const maybeRevoked = await tokenRepo.findOne({
+          where: { tokenHash },
+        });
+
+        if (maybeRevoked) {
+          await tokenRepo.update(
+            { familyId: maybeRevoked.familyId },
+            { isRevoked: true },
+          );
+          throw new UnauthorizedException(
+            'Token reuse detected. Session terminated.',
+          );
+        }
+
+        throw new UnauthorizedException('Invalid refresh token');
       }
 
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+      if (stored.expiresAt < new Date()) {
+        await tokenRepo.update({ tokenHash }, { isRevoked: true });
+        throw new UnauthorizedException('Refresh token expired');
+      }
 
-    if (stored.expiresAt < new Date()) {
-      await this.refreshTokenRepository.revokeToken(tokenHash);
-      throw new UnauthorizedException('Refresh token expired');
-    }
+      await tokenRepo.update({ tokenHash }, { isRevoked: true });
 
-    // revoke current token before issuing new one
-    await this.refreshTokenRepository.revokeToken(tokenHash);
+      const newRefreshToken = await this.generateRefreshToken(
+        stored.userId,
+        tenantId,
+        stored.familyId,
+        manager,
+      );
 
-    // issue new pair with same familyId
-    const newRefreshToken = await this.generateRefreshToken(
-      stored.userId,
-      tenantId,
-      stored.familyId,
-    );
+      const accessToken = this.generateAccessToken({
+        sub: stored.userId,
+        email: '',
+        tenantId,
+        familyId: stored.familyId,
+      });
 
-    const accessToken = this.generateAccessToken({
-      sub: stored.userId,
-      email: '', // will be populated from user lookup in auth.service
-      tenantId,
-      familyId: stored.familyId,
+      return { accessToken, refreshToken: newRefreshToken };
     });
-
-    return { accessToken, refreshToken: newRefreshToken };
   }
 
   async revokeFamily(familyId: string) {

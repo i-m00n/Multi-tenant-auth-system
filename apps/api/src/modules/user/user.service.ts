@@ -4,12 +4,16 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { DataSource } from 'typeorm';
 import { UserRepository } from './user.repository';
 import { TenantContext } from '../tenant/tenant-context.service';
 import { RbacSeed } from '../rbac/rbac.seed';
 import { RbacService } from '../rbac/rbac.service';
 import { RegisterUserDto, UserResponse } from './user.schemas';
 import { ConfigService } from '@nestjs/config';
+import { UserEntity } from './user.entity';
+import { RoleEntity } from '../rbac/role.entity';
+import { UserRoleEntity } from '../rbac/user-role.entity';
 
 interface Argon2Config {
   memoryCost: number;
@@ -20,6 +24,7 @@ interface Argon2Config {
 @Injectable()
 export class UserService {
   constructor(
+    private dataSource: DataSource,
     private userRepository: UserRepository,
     private tenantContext: TenantContext,
     private rbacSeed: RbacSeed,
@@ -29,9 +34,6 @@ export class UserService {
 
   async register(dto: RegisterUserDto): Promise<UserResponse> {
     const tenantId = this.tenantContext.requireTenantId();
-
-    const exists = await this.userRepository.existsByEmail(dto.email, tenantId);
-    if (exists) throw new ConflictException('Email already registered');
 
     const argon2Config = this.configService.get<Argon2Config>('argon2');
     if (!argon2Config) {
@@ -45,21 +47,34 @@ export class UserService {
       parallelism: argon2Config.parallelism,
     });
 
-    const user = await this.userRepository.createUser({
-      email: dto.email,
-      passwordHash,
-      tenantId,
+    return this.dataSource.transaction(async (manager) => {
+      const userRepo = manager.getRepository(UserEntity);
+      const roleRepo = manager.getRepository(RoleEntity);
+      const userRoleRepo = manager.getRepository(UserRoleEntity);
+
+      const exists = await userRepo.existsBy({ email: dto.email, tenantId });
+      if (exists) throw new ConflictException('Email already registered');
+
+      const user = await userRepo.save(
+        userRepo.create({ email: dto.email, passwordHash, tenantId }),
+      );
+
+      const viewerRole = await roleRepo.findOne({
+        where: { name: 'viewer', tenantId },
+      });
+
+      if (viewerRole) {
+        await userRoleRepo.save(
+          userRoleRepo.create({
+            userId: user.id,
+            roleId: viewerRole.id,
+            tenantId,
+          }),
+        );
+      }
+
+      return this.toUserResponse(user);
     });
-
-    const viewerRole = await this.rbacService.findRoleByName(
-      'viewer',
-      tenantId,
-    );
-    if (viewerRole) {
-      await this.rbacService.assignRoleToUser(user.id, viewerRole.id, tenantId);
-    }
-
-    return this.toUserResponse(user);
   }
 
   async validatePassword(
@@ -80,7 +95,6 @@ export class UserService {
     return this.toUserResponse(user);
   }
 
-  // single place that strips passwordHash and enforces the return shape
   private toUserResponse(user: {
     id: string;
     email: string;
