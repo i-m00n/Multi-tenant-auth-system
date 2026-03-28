@@ -12,6 +12,7 @@ import { RbacGuard } from './common/guards/rbac.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthModule } from '@modules/auth/auth.module';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -27,13 +28,14 @@ import { AuthModule } from '@modules/auth/auth.module';
   ],
   providers: [
     RlsSubscriber,
+    AppService,
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard, // runs first — populates req.user
+      useClass: JwtAuthGuard, // runs first - populates req.user
     },
     {
       provide: APP_GUARD,
-      useClass: RbacGuard, // runs second — needs req.user already set
+      useClass: RbacGuard, // runs second - needs req.user already set
     },
   ],
 })

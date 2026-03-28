@@ -7,7 +7,7 @@ import { PermissionEntity } from './permission.entity';
 
 @Injectable()
 export class RbacSeed {
-  private permissionRepo: Repository<PermissionEntity>; // ← typed explicitly
+  private permissionRepo: Repository<PermissionEntity>;
 
   constructor(
     @InjectDataSource() private dataSource: DataSource,

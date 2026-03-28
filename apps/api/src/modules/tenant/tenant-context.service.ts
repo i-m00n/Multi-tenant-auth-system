@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 
 interface TenantStore {
@@ -19,5 +19,13 @@ export class TenantContext {
       return undefined;
     }
     return store.tenantId;
+  }
+
+  requireTenantId(): string {
+    const tenantId = this.getTenantId();
+    if (!tenantId) {
+      throw new InternalServerErrorException('Tenant context is not set');
+    }
+    return tenantId;
   }
 }

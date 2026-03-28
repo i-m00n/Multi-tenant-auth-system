@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tenant } from './tenant.entity';
 import { TenantRepository } from './tenant.repository';
 import { TenantContext } from './tenant-context.service';
+import { RbacModule } from '@modules/rbac/rbac.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tenant])],
+  imports: [TypeOrmModule.forFeature([Tenant]), RbacModule],
   providers: [TenantService, TenantRepository, TenantContext],
   exports: [TenantService, TenantRepository, TenantContext],
   controllers: [TenantController],

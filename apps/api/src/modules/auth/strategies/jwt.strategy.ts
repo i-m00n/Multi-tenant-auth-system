@@ -33,7 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     tenantId: string;
     familyId: string;
   }> {
-    const currentTenantId = this.tenantContext.getTenantId();
+    const currentTenantId = this.tenantContext.requireTenantId();
 
     if (payload.tenantId !== currentTenantId) {
       throw new UnauthorizedException('Token tenant mismatch');

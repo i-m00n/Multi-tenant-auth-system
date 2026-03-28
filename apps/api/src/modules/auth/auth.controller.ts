@@ -42,7 +42,7 @@ export class AuthController {
 
     this.setRefreshCookie(res, refreshToken);
 
-    // refreshToken never in response body — it's in a (httpOnly cookie) only
+    // refreshToken never in response body - it's in a (httpOnly cookie) only
     return { accessToken, user };
   }
 

@@ -23,7 +23,7 @@ export class RefreshTokenRepository extends Repository<RefreshTokenEntity> {
   }
 
   async revokeFamilyById(familyId: string) {
-    // called on replay attack — kills entire session
+    // called on replay attack - kills entire session
     await this.update({ familyId }, { isRevoked: true });
   }
 

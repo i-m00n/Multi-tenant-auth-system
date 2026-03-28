@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { TokenService } from './token.service';
 import { TenantContext } from '../tenant/tenant-context.service';
@@ -17,14 +13,6 @@ export class AuthService {
     private tenantContext: TenantContext,
   ) {}
 
-  private requireTenantId(): string {
-    const tenantId = this.tenantContext.getTenantId();
-    if (!tenantId) {
-      throw new InternalServerErrorException('Tenant context is not set');
-    }
-    return tenantId;
-  }
-
   async login(dto: LoginDto) {
     const user = await this.userService.validatePassword(
       dto.email,
@@ -32,7 +20,7 @@ export class AuthService {
     );
     if (!user) throw new UnauthorizedException('Invalid email or password');
 
-    const tenantId = this.requireTenantId();
+    const tenantId = this.tenantContext.requireTenantId();
     const familyId = randomUUID(); // fresh family = fresh session
 
     const accessToken = this.tokenService.generateAccessToken({
@@ -52,7 +40,7 @@ export class AuthService {
   }
 
   async refresh(rawRefreshToken: string) {
-    const tenantId = this.requireTenantId();
+    const tenantId = this.tenantContext.requireTenantId();
     return this.tokenService.rotateRefreshToken(rawRefreshToken, tenantId);
   }
 

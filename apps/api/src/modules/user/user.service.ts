@@ -27,17 +27,8 @@ export class UserService {
     private configService: ConfigService,
   ) {}
 
-  // resolves tenantId or throws — used by every method below
-  private requireTenantId(): string {
-    const tenantId = this.tenantContext.getTenantId();
-    if (!tenantId) {
-      throw new InternalServerErrorException('Tenant context is not set');
-    }
-    return tenantId;
-  }
-
   async register(dto: RegisterUserDto): Promise<UserResponse> {
-    const tenantId = this.requireTenantId();
+    const tenantId = this.tenantContext.requireTenantId();
 
     const exists = await this.userRepository.existsByEmail(dto.email, tenantId);
     if (exists) throw new ConflictException('Email already registered');
@@ -75,7 +66,7 @@ export class UserService {
     email: string,
     password: string,
   ): Promise<UserResponse | null> {
-    const tenantId = this.requireTenantId();
+    const tenantId = this.tenantContext.requireTenantId();
 
     const user = await this.userRepository.findByEmailWithPassword(
       email,

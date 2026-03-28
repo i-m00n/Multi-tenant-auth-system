@@ -9,7 +9,7 @@ export interface JwtPayload {
   sub: string; // userId
   email: string;
   tenantId: string;
-  familyId: string; // session identifier — same for the whole refresh family
+  familyId: string; // session identifier - same for the whole refresh family
 }
 
 @Injectable()
@@ -50,7 +50,7 @@ export class TokenService {
       expiresAt,
     });
 
-    return rawToken; // return raw — only time it's ever in plaintext
+    return rawToken; // return raw - only time it's ever in plaintext
   }
 
   async rotateRefreshToken(
@@ -61,7 +61,7 @@ export class TokenService {
     const stored = await this.refreshTokenRepository.findByTokenHash(tokenHash);
 
     if (!stored) {
-      // token not found — could be expired or never existed
+      // token not found - could be expired or never existed
       // check if this hash belongs to a revoked token (replay attack)
       const maybeRevoked = await this.refreshTokenRepository.findOne({
         where: { tokenHash },

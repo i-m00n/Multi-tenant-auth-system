@@ -33,4 +33,30 @@ export class RbacRepository {
     const userRole = this.userRoleRepo.create({ userId, roleId, tenantId });
     return this.userRoleRepo.save(userRole);
   }
+
+  findRolesByTenantId(tenantId: string) {
+    return this.roleRepo.find({
+      where: { tenantId },
+      relations: ['permissions'],
+    });
+  }
+
+  findRoleById(id: string) {
+    return this.roleRepo.findOne({
+      where: { id },
+      relations: ['permissions'],
+    });
+  }
+
+  findUserRole(userId: string, roleId: string) {
+    return this.userRoleRepo.findOne({ where: { userId, roleId } });
+  }
+
+  async assignPermissionToRole(roleId: string, permissionId: string) {
+    await this.dataSource.query(
+      `INSERT INTO role_permissions (role_id, permission_id)
+     VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [roleId, permissionId],
+    );
+  }
 }
