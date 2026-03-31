@@ -1,8 +1,12 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import * as userSchemas from './user.schemas';
 import { Public } from 'src/common/decorators/public.decorator';
+import {
+  RateLimit,
+  registerKeyStrategy,
+} from 'src/common/decorators/rate-limit.decorator';
 
 @Controller(':tenant/api/auth')
 export class UserController {
@@ -10,6 +14,12 @@ export class UserController {
 
   @Post('register')
   @Public()
+  @HttpCode(201)
+  @RateLimit({
+    limit: 10,
+    windowSeconds: 3600,
+    keyStrategy: registerKeyStrategy,
+  })
   register(
     @Body(new ZodValidationPipe(userSchemas.RegisterUserSchema))
     dto: userSchemas.RegisterUserDto,

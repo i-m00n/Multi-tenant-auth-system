@@ -7,6 +7,11 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ConfigService } from '@nestjs/config';
 import { Cookies } from 'src/common/decorators/cookies.decorator';
+import {
+  RateLimit,
+  loginKeyStrategy,
+  refreshKeyStrategy,
+} from 'src/common/decorators/rate-limit.decorator';
 
 @Controller(':tenant/api/auth')
 export class AuthController {
@@ -32,6 +37,11 @@ export class AuthController {
   @Post('login')
   @Public()
   @HttpCode(200)
+  @RateLimit({
+    limit: 5,
+    windowSeconds: 900,
+    keyStrategy: loginKeyStrategy,
+  })
   async login(
     @Body(new ZodValidationPipe(authSchemas.LoginSchema))
     dto: authSchemas.LoginDto,
@@ -49,6 +59,11 @@ export class AuthController {
   @Post('refresh')
   @Public()
   @HttpCode(200)
+  @RateLimit({
+    limit: 20,
+    windowSeconds: 900,
+    keyStrategy: refreshKeyStrategy,
+  })
   async refresh(
     @Cookies('refresh_token') token: string | undefined,
     @Res({ passthrough: true }) res: express.Response,

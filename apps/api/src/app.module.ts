@@ -13,6 +13,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthModule } from '@modules/auth/auth.module';
 import { AppService } from './app.service';
+import { RateLimitModule } from '@modules/rate-limit/rate-limit.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AppService } from './app.service';
     UserModule,
     RbacModule,
     AuthModule,
+    RateLimitModule,
   ],
   providers: [
     RlsSubscriber,
