@@ -2,6 +2,7 @@ import {
   EntitySubscriberInterface,
   BeforeQueryEvent,
   DataSource,
+  AfterQueryEvent,
 } from 'typeorm';
 import { TenantContext } from '../modules/tenant/tenant-context.service';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -15,19 +16,23 @@ export class RlsSubscriber implements EntitySubscriberInterface {
   }
 
   async beforeQuery(event: BeforeQueryEvent<any>) {
-    const tenantId = this.tenantContext?.getTenantId();
-    if (!tenantId || !event.queryRunner) return;
+    if (this.isSetQuery(event.query) || !event.queryRunner) return;
 
-    // Guard: skip if this query IS the SET LOCAL itself
-    if (
-      typeof event.query === 'string' &&
-      event.query.trimStart().toUpperCase().startsWith('SET')
-    ) {
-      return;
-    }
+    const tenantId = this.tenantContext?.getTenantId() ?? '';
 
-    await event.queryRunner.query(
-      `SET LOCAL app.current_tenant_id = '${tenantId}'`,
+    await event.queryRunner.query(`SET app.current_tenant_id = '${tenantId}'`);
+  }
+
+  async afterQuery(event: AfterQueryEvent<any>) {
+    if (this.isSetQuery(event.query) || !event.queryRunner) return;
+
+    await event.queryRunner.query(`SET app.current_tenant_id = ''`);
+  }
+
+  private isSetQuery(query: unknown): boolean {
+    return (
+      typeof query === 'string' &&
+      query.trimStart().toUpperCase().startsWith('SET')
     );
   }
 }
