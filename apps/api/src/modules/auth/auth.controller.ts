@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Res, HttpCode, Req } from '@nestjs/common';
 import express from 'express';
 import { AuthService } from './auth.service';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
@@ -46,9 +46,15 @@ export class AuthController {
     @Body(new ZodValidationPipe(authSchemas.LoginSchema))
     dto: authSchemas.LoginDto,
     @Res({ passthrough: true }) res: express.Response,
+    @Req() req: express.Request,
   ) {
-    const { accessToken, refreshToken, user } =
-      await this.authService.login(dto);
+    const ip = req.ip ?? '';
+    const ua = req.headers['user-agent'] ?? '';
+    const { accessToken, refreshToken, user } = await this.authService.login(
+      dto,
+      ip,
+      ua,
+    );
 
     this.setRefreshCookie(res, refreshToken);
 
@@ -67,12 +73,20 @@ export class AuthController {
   async refresh(
     @Cookies('refresh_token') token: string | undefined,
     @Res({ passthrough: true }) res: express.Response,
+    @Req() req: express.Request,
   ) {
+    const ip = req.ip ?? '';
+    const ua = req.headers['user-agent'] ?? '';
+
     if (!token) {
       return res.status(401).json({ message: 'No refresh token provided' });
     }
 
-    const { accessToken, refreshToken } = await this.authService.refresh(token);
+    const { accessToken, refreshToken } = await this.authService.refresh(
+      token,
+      ip,
+      ua,
+    );
 
     // rotate the cookie with the new token
     this.setRefreshCookie(res, refreshToken);
@@ -83,10 +97,13 @@ export class AuthController {
   @Post('logout')
   @HttpCode(200)
   async logout(
-    @CurrentUser() user: { familyId: string },
+    @CurrentUser() user: { id: string; familyId: string },
     @Res({ passthrough: true }) res: express.Response,
+    @Req() req: express.Request,
   ) {
-    await this.authService.logout(user.familyId);
+    const ip = req.ip ?? '';
+    const ua = req.headers['user-agent'] ?? '';
+    await this.authService.logout(user.familyId, user.id, ip, ua);
     this.clearRefreshCookie(res);
     return { message: 'Logged out successfully' };
   }
@@ -96,8 +113,11 @@ export class AuthController {
   async logoutAll(
     @CurrentUser() user: { id: string },
     @Res({ passthrough: true }) res: express.Response,
+    @Req() req: express.Request,
   ) {
-    await this.authService.logoutAll(user.id);
+    const ip = req.ip ?? '';
+    const ua = req.headers['user-agent'] ?? '';
+    await this.authService.logoutAll(user.id, ip, ua);
     this.clearRefreshCookie(res);
     return { message: 'Logged out from all devices' };
   }

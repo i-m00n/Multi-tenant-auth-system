@@ -6,6 +6,12 @@ import { DataSource, EntityManager } from 'typeorm';
 import { RefreshTokenRepository } from './refresh-token.repository';
 import { RefreshTokenEntity } from './refresh-token.entity';
 import type { StringValue } from 'ms';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AUTH_EVENTS,
+  TokenReplayDetectedEvent,
+  TokenRefreshedEvent,
+} from 'src/common/events/auth.events';
 
 export interface JwtPayload {
   sub: string;
@@ -21,6 +27,7 @@ export class TokenService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private refreshTokenRepository: RefreshTokenRepository,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   generateAccessToken(payload: JwtPayload): string {
@@ -65,6 +72,8 @@ export class TokenService {
   async rotateRefreshToken(
     rawToken: string,
     tenantId: string,
+    ipAddress: string,
+    userAgent: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const tokenHash = this.hashToken(rawToken);
 
@@ -85,6 +94,17 @@ export class TokenService {
             { familyId: maybeRevoked.familyId },
             { isRevoked: true },
           );
+
+          this.eventEmitter.emit(
+            AUTH_EVENTS.TOKEN_REPLAY,
+            new TokenReplayDetectedEvent({
+              tenantId,
+              familyId: maybeRevoked.familyId,
+              ipAddress,
+              userAgent,
+            }),
+          );
+
           throw new UnauthorizedException(
             'Token reuse detected. Session terminated.',
           );
@@ -113,6 +133,17 @@ export class TokenService {
         tenantId,
         familyId: stored.familyId,
       });
+
+      this.eventEmitter.emit(
+        AUTH_EVENTS.TOKEN_REFRESHED,
+        new TokenRefreshedEvent({
+          tenantId,
+          userId: stored.userId,
+          familyId: stored.familyId,
+          ipAddress,
+          userAgent,
+        }),
+      );
 
       return { accessToken, refreshToken: newRefreshToken };
     });

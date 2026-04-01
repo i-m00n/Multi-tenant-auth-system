@@ -80,3 +80,20 @@ ALTER TABLE refresh_tokens FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS refresh_tokens_isolation ON refresh_tokens;
 CREATE POLICY refresh_tokens_isolation ON refresh_tokens
   USING (tenant_id = app_current_tenant_id());
+
+-- audit_logs — append only, tenant-isolated reads
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS audit_logs_insert ON audit_logs;
+CREATE POLICY audit_logs_insert ON audit_logs
+  FOR INSERT TO app_user
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS audit_logs_select ON audit_logs;
+CREATE POLICY audit_logs_select ON audit_logs
+  FOR SELECT TO app_user
+  USING (tenant_id = app_current_tenant_id());
+
+-- no UPDATE policy — updates blocked
+-- no DELETE policy — deletes blocked

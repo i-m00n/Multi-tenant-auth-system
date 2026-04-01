@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, Req } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import * as userSchemas from './user.schemas';
@@ -7,7 +7,7 @@ import {
   RateLimit,
   registerKeyStrategy,
 } from 'src/common/decorators/rate-limit.decorator';
-
+import express from 'express';
 @Controller(':tenant/api/auth')
 export class UserController {
   constructor(private userService: UserService) {}
@@ -22,8 +22,12 @@ export class UserController {
   })
   register(
     @Body(new ZodValidationPipe(userSchemas.RegisterUserSchema))
+    @Req()
+    req: express.Request,
     dto: userSchemas.RegisterUserDto,
   ) {
-    return this.userService.register(dto);
+    const ip = req.ip ?? '';
+    const ua = req.headers['user-agent'] ?? '';
+    return this.userService.register(dto, ip, ua);
   }
 }

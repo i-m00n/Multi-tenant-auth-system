@@ -1,5 +1,5 @@
 // rbac/rbac.controller.ts
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
 import { RbacService } from './rbac.service';
 import { TenantContext } from '../tenant/tenant-context.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
@@ -11,7 +11,7 @@ import {
   AssignPermissionSchema,
   AssignRoleSchema,
 } from './rbac.schemas';
-
+import express from 'express';
 @Controller(':tenant/api/roles')
 export class RbacController {
   constructor(
@@ -19,7 +19,6 @@ export class RbacController {
     private tenantContext: TenantContext,
   ) {}
 
-  // list all roles - any authenticated user can see roles
   @Get()
   @RequirePermissions(PERMISSIONS.ROLE_READ)
   getRoles() {
@@ -27,17 +26,25 @@ export class RbacController {
     return this.rbacService.getRolesForTenant(tenantId);
   }
 
-  // create custom role - admin only
   @Post()
   @RequirePermissions(PERMISSIONS.ROLE_ASSIGN)
   createRole(
     @Body(new ZodValidationPipe(CreateRoleSchema)) body: { name: string },
+    @Req() req: express.Request,
+    @CurrentUser() admin: { id: string },
   ) {
     const tenantId = this.tenantContext.requireTenantId();
-    return this.rbacService.createRole(body.name, tenantId);
+    const ipAddress = req.ip ?? '';
+    const userAgent = req.headers['user-agent'] ?? '';
+    return this.rbacService.createRole(
+      body.name,
+      tenantId,
+      admin.id,
+      ipAddress,
+      userAgent,
+    );
   }
 
-  // assign permission to a role - admin only
   @Post(':roleId/permissions')
   @RequirePermissions(PERMISSIONS.ROLE_ASSIGN)
   assignPermission(
@@ -54,7 +61,6 @@ export class RbacController {
   }
 }
 
-// separate controller for user-role assignments
 @Controller(':tenant/api/users')
 export class UserRoleController {
   constructor(
@@ -62,7 +68,6 @@ export class UserRoleController {
     private tenantContext: TenantContext,
   ) {}
 
-  // get current user profile + their permissions
   @Get('me')
   async getMe(
     @CurrentUser() user: { id: string; email: string; tenantId: string },
@@ -71,14 +76,24 @@ export class UserRoleController {
     return { ...user, permissions };
   }
 
-  // assign role to user - admin only
   @Post(':userId/roles')
   @RequirePermissions(PERMISSIONS.ROLE_ASSIGN)
   assignRole(
+    @CurrentUser() admin: { id: string },
     @Param('userId') userId: string,
     @Body(new ZodValidationPipe(AssignRoleSchema)) body: { roleId: string },
+    @Req() req: express.Request,
   ) {
     const tenantId = this.tenantContext.requireTenantId();
-    return this.rbacService.assignRoleToUserSafe(userId, body.roleId, tenantId);
+    const ip = req.ip ?? '';
+    const ua = req.headers['user-agent'] ?? '';
+    return this.rbacService.assignRoleToUserSafe(
+      userId,
+      body.roleId,
+      tenantId,
+      admin.id,
+      ip,
+      ua,
+    );
   }
 }

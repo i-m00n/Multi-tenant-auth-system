@@ -8,6 +8,12 @@ import { RbacRepository } from './rbac.repository';
 import { PermissionRepository } from './permission.repository';
 import { TenantContext } from '../tenant/tenant-context.service';
 import { Permission } from './permissions.constants';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  RBAC_EVENTS,
+  RoleAssignedEvent,
+  RoleCreatedEvent,
+} from 'src/common/events/rbac.events';
 
 @Injectable()
 export class RbacService {
@@ -15,9 +21,9 @@ export class RbacService {
     private rbacRepository: RbacRepository,
     private permissionRepository: PermissionRepository,
     private tenantContext: TenantContext,
+    private eventEmitter: EventEmitter2,
   ) {}
 
-  // existing
   async getUserPermissions(userId: string): Promise<Permission[]> {
     const userRoles = await this.rbacRepository.findRolesByUserId(userId);
     const permissions = userRoles
@@ -26,30 +32,46 @@ export class RbacService {
     return [...new Set(permissions)];
   }
 
-  // existing
   async assignRoleToUser(userId: string, roleId: string, tenantId: string) {
     return this.rbacRepository.assignRole(userId, roleId, tenantId);
   }
 
-  // existing
   findRoleByName(name: string, tenantId: string) {
     return this.rbacRepository.findRoleByName(name, tenantId);
   }
 
-  // new - list all roles for current tenant
   getRolesForTenant(tenantId: string) {
     return this.rbacRepository.findRolesByTenantId(tenantId);
   }
 
-  // new - create a custom role (non-system)
-  async createRole(name: string, tenantId: string) {
+  async createRole(
+    name: string,
+    tenantId: string,
+    currentUserId: string,
+    ipAddress: string,
+    userAgent: string,
+  ) {
     const existing = await this.rbacRepository.findRoleByName(name, tenantId);
     if (existing) throw new ConflictException(`Role '${name}' already exists`);
-
-    return this.rbacRepository.createRole({ name, tenantId, isSystem: false });
+    const role = await this.rbacRepository.createRole({
+      name,
+      tenantId,
+      isSystem: false,
+    });
+    this.eventEmitter.emit(
+      RBAC_EVENTS.ROLE_CREATED,
+      new RoleCreatedEvent({
+        tenantId,
+        createdByUserId: currentUserId,
+        roleId: role.id,
+        roleName: role.name,
+        ipAddress,
+        userAgent,
+      }),
+    );
+    return;
   }
 
-  // new - assign a permission to a role
   async assignPermissionToRole(
     roleId: string,
     permissionName: Permission,
@@ -71,8 +93,14 @@ export class RbacService {
     return this.rbacRepository.assignPermissionToRole(roleId, permission.id);
   }
 
-  // new - assign a role to a user (with tenant validation)
-  async assignRoleToUserSafe(userId: string, roleId: string, tenantId: string) {
+  async assignRoleToUserSafe(
+    userId: string,
+    roleId: string,
+    tenantId: string,
+    currentUserId: string,
+    ipAddress: string,
+    userAgent: string,
+  ) {
     const role = await this.rbacRepository.findRoleById(roleId);
     if (!role) throw new NotFoundException('Role not found');
     if (role.tenantId !== tenantId)
@@ -80,7 +108,20 @@ export class RbacService {
 
     const existing = await this.rbacRepository.findUserRole(userId, roleId);
     if (existing) throw new ConflictException('User already has this role');
+    await this.rbacRepository.assignRole(userId, roleId, tenantId);
 
-    return this.rbacRepository.assignRole(userId, roleId, tenantId);
+    this.eventEmitter.emit(
+      RBAC_EVENTS.ROLE_ASSIGNED,
+      new RoleAssignedEvent({
+        tenantId,
+        assignedByUserId: currentUserId,
+        assignedToUserId: userId,
+        roleId,
+        roleName: role.name,
+        ipAddress,
+        userAgent,
+      }),
+    );
+    return;
   }
 }

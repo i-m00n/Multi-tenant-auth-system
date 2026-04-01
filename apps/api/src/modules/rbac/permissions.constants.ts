@@ -6,6 +6,7 @@ export const PERMISSIONS = {
   ROLE_ASSIGN: 'role:assign',
   TENANT_READ: 'tenant:read',
   TENANT_UPDATE: 'tenant:update',
+  AUDIT_READ: 'audit:read',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

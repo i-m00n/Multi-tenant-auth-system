@@ -14,6 +14,11 @@ import { ConfigService } from '@nestjs/config';
 import { UserEntity } from './user.entity';
 import { RoleEntity } from '../rbac/role.entity';
 import { UserRoleEntity } from '../rbac/user-role.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  USER_EVENTS,
+  UserRegisteredEvent,
+} from 'src/common/events/user.events';
 
 interface Argon2Config {
   memoryCost: number;
@@ -24,6 +29,7 @@ interface Argon2Config {
 @Injectable()
 export class UserService {
   constructor(
+    private eventEmitter: EventEmitter2,
     private dataSource: DataSource,
     private userRepository: UserRepository,
     private tenantContext: TenantContext,
@@ -32,7 +38,11 @@ export class UserService {
     private configService: ConfigService,
   ) {}
 
-  async register(dto: RegisterUserDto): Promise<UserResponse> {
+  async register(
+    dto: RegisterUserDto,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<UserResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const argon2Config = this.configService.get<Argon2Config>('argon2');
@@ -72,6 +82,17 @@ export class UserService {
           }),
         );
       }
+
+      this.eventEmitter.emit(
+        USER_EVENTS.REGISTERED,
+        new UserRegisteredEvent({
+          tenantId,
+          userId: user.id,
+          email: user.email,
+          ipAddress,
+          userAgent,
+        }),
+      );
 
       return this.toUserResponse(user);
     });

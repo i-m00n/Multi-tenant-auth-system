@@ -14,7 +14,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthModule } from '@modules/auth/auth.module';
 import { AppService } from './app.service';
 import { RateLimitModule } from '@modules/rate-limit/rate-limit.module';
-
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AuditModule } from './modules/audit/audit.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,6 +28,12 @@ import { RateLimitModule } from '@modules/rate-limit/rate-limit.module';
     RbacModule,
     AuthModule,
     RateLimitModule,
+    AuditModule,
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      global: true,
+    }),
   ],
   providers: [
     RlsSubscriber,
