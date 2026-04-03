@@ -61,7 +61,6 @@ export class HttpClient {
     const token = await this.tokenManager.ensureFresh(() => this.refreshToken(), this.onLogout);
 
     if (!token) {
-      this.onLogout();
       throw new AuthError({ message: "No valid session" });
     }
 
@@ -117,8 +116,18 @@ export class HttpClient {
 
     switch (response.status) {
       case 400: {
-        const b = body as { errors?: { field: string; message: string }[] };
-        throw new ValidationError(b.errors ?? [], body);
+        const b = body as {
+          message?: string;
+          errors?: {
+            properties?: Record<string, { errors: string[] }>;
+          };
+        };
+
+        const errors = Object.entries(b.errors?.properties ?? {}).flatMap(([field, value]) =>
+          (value.errors ?? []).map((msg) => ({ field, message: msg })),
+        );
+
+        throw new ValidationError(errors, body);
       }
       case 401:
         throw new AuthError(body);
