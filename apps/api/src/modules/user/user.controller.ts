@@ -21,9 +21,8 @@ export class UserController {
     keyStrategy: registerKeyStrategy,
   })
   register(
+    @Req() req: express.Request,
     @Body(new ZodValidationPipe(userSchemas.RegisterUserSchema))
-    @Req()
-    req: express.Request,
     dto: userSchemas.RegisterUserDto,
   ) {
     const ip = req.ip ?? '';

@@ -14,5 +14,5 @@ export const AssignPermissionSchema = z.object({
 });
 
 export const AssignRoleSchema = z.object({
-  roleId: z.string().uuid(),
+  roleId: z.uuid(),
 });
