@@ -36,7 +36,14 @@ async function bootstrap() {
     next();
   });
 
-  await app.listen(process.env.PORT || 3000);
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  await app.listen(process.env.PORT || 3000, '0.0.0.0');
 }
 bootstrap().catch((err) => {
   console.error('Error during bootstrap', err);

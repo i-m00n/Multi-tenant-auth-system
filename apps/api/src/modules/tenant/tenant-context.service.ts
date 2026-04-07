@@ -9,8 +9,8 @@ interface TenantStore {
 export class TenantContext {
   private als = new AsyncLocalStorage<TenantStore>();
 
-  run(tenantId: string, callback: () => void) {
-    this.als.run({ tenantId }, callback);
+  run<T>(tenantId: string, cb: () => T): T {
+    return this.als.run({ tenantId }, cb);
   }
 
   getTenantId(): string | undefined {

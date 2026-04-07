@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { PERMISSIONS } from './permissions.constants';
 import { RoleEntity } from './role.entity';
 import { PermissionEntity } from './permission.entity';
@@ -23,8 +23,11 @@ export class RbacSeed {
     }
   }
 
-  async seedRolesForTenant(tenantId: string): Promise<void> {
-    return this.dataSource.transaction(async (manager) => {
+  async seedRolesForTenant(
+    tenantId: string,
+    existingManager?: EntityManager,
+  ): Promise<void> {
+    const run = async (manager: EntityManager) => {
       const roleRepo = manager.getRepository(RoleEntity);
       const permRepo = manager.getRepository(PermissionEntity);
 
@@ -53,6 +56,12 @@ export class RbacSeed {
           [viewerRole.id, perm.id],
         );
       }
-    });
+    };
+
+    if (existingManager) {
+      await run(existingManager);
+    } else {
+      await this.dataSource.transaction(run);
+    }
   }
 }

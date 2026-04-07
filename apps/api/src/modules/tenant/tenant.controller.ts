@@ -3,6 +3,7 @@ import type { TenantRequest } from 'src/types/tenant-request.interface';
 import { TenantService } from './tenant.service';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import * as tenantSchemas from './tenant.schemas';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @Controller()
 export class TenantController {
@@ -19,6 +20,7 @@ export class TenantController {
   }
 
   @Post('tenants')
+  @Public()
   create(
     @Body(new ZodValidationPipe(tenantSchemas.CreateTenantSchema))
     dto: tenantSchemas.CreateTenantDto,
