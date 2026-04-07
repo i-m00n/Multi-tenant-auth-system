@@ -14,7 +14,13 @@ export type {
   MessageResponse,
 } from "./types/responses";
 
-export { LoginSchema, RegisterUserSchema, CreateRoleSchema, AuditQuerySchema } from "./types/schemas";
+export {
+  LoginSchema,
+  RegisterUserSchema,
+  CreateRoleSchema,
+  AuditQuerySchema,
+  PERMISSION_VALUES,
+} from "./types/schemas";
 export type { LoginDto, RegisterUserDto, CreateRoleDto, AuditQueryDto } from "./types/schemas";
 
 export type { AuditQueryParams } from "./modules/audit";
