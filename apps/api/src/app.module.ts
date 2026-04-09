@@ -16,6 +16,7 @@ import { AppService } from './app.service';
 import { RateLimitModule } from '@modules/rate-limit/rate-limit.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuditModule } from './modules/audit/audit.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -23,11 +24,19 @@ import { AuditModule } from './modules/audit/audit.module';
       load: [configuration],
     }),
     TypeOrmModule.forRoot(getTypeOrmConfig()),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: parseInt(process.env.THROTTLER_TTL_MS ?? '60000'),
+          limit: parseInt(process.env.THROTTLER_LIMIT ?? '100'),
+        },
+      ],
+    }),
+    RateLimitModule,
     TenantModule,
     UserModule,
     RbacModule,
     AuthModule,
-    RateLimitModule,
     AuditModule,
     EventEmitterModule.forRoot({
       wildcard: false,
@@ -38,6 +47,10 @@ import { AuditModule } from './modules/audit/audit.module';
   providers: [
     RlsSubscriber,
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard, // runs first - populates req.user

@@ -12,6 +12,7 @@ import {
   loginKeyStrategy,
   refreshKeyStrategy,
 } from 'src/common/decorators/rate-limit.decorator';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller(':tenant/api/auth')
 export class AuthController {
@@ -62,6 +63,7 @@ export class AuthController {
     return { accessToken, user };
   }
 
+  @SkipThrottle()
   @Post('refresh')
   @Public()
   @HttpCode(200)

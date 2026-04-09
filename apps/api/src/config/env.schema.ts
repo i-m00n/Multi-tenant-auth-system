@@ -19,6 +19,9 @@ export const envSchema = z.object({
   ARGON2_TIME_COST: z.coerce.number().default(3),
   ARGON2_PARALLELISM: z.coerce.number().default(4),
 
+  THROTTLER_TTL_MS: z.coerce.number().default(60000),
+  THROTTLER_LIMIT: z.coerce.number().default(100),
+
   RATE_LIMIT_LOGIN_LIMIT: z.coerce.number().default(5),
   RATE_LIMIT_LOGIN_WINDOW_SECONDS: z.coerce.number().default(900),
   RATE_LIMIT_REGISTER_LIMIT: z.coerce.number().default(10),

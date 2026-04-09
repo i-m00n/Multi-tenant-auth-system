@@ -25,6 +25,10 @@ export default () => {
       timeCost: parsed.ARGON2_TIME_COST,
       parallelism: parsed.ARGON2_PARALLELISM,
     },
+    throttler: {
+      ttl: parsed.THROTTLER_TTL_MS,
+      limit: parsed.THROTTLER_LIMIT,
+    },
     rateLimit: {
       login: {
         limit: parsed.RATE_LIMIT_LOGIN_LIMIT,
