@@ -1,8 +1,11 @@
 import { HttpClient } from "../http";
-import type { MeResponse, UserResponse } from "../types/responses";
+import type { MeResponse } from "../types/responses";
 
 export class UsersModule {
-  constructor(private http: HttpClient) {}
+  private http: HttpClient;
+  constructor(http: HttpClient) {
+    this.http = http;
+  }
 
   getMe(): Promise<MeResponse> {
     return this.http.get<MeResponse>("/users/me");

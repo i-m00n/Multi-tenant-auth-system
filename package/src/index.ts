@@ -1,5 +1,4 @@
-export { createAuthClient, AuthClient } from "./client";
-export type { AuthClientOptions } from "./client";
+export { createAuthClient, AuthClient, type AuthClientOptions } from "./client";
 
 export { SdkError, AuthError, ForbiddenError, NotFoundError, RateLimitError, ValidationError } from "./types/errors";
 

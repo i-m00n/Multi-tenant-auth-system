@@ -3,10 +3,12 @@ import { TokenManager } from "../token-manager";
 import type { TokenResponse, RefreshResponse, MessageResponse } from "../types/responses";
 
 export class AuthModule {
-  constructor(
-    private http: HttpClient,
-    private tokenManager: TokenManager,
-  ) {}
+  private http: HttpClient;
+  private tokenManager: TokenManager;
+  constructor(http: HttpClient, tokenManager: TokenManager) {
+    this.http = http;
+    this.tokenManager = tokenManager;
+  }
 
   async login(email: string, password: string): Promise<TokenResponse> {
     const data = await this.http.postPublic<TokenResponse>("/auth/login", {

@@ -2,7 +2,10 @@ import { HttpClient } from "../http";
 import type { RoleResponse, MessageResponse } from "../types/responses";
 
 export class RolesModule {
-  constructor(private http: HttpClient) {}
+  private http: HttpClient;
+  constructor(http: HttpClient) {
+    this.http = http;
+  }
 
   getRoles(): Promise<RoleResponse[]> {
     return this.http.get<RoleResponse[]>("/roles");

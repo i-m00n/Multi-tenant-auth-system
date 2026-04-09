@@ -6,15 +6,44 @@ interface TokenData {
 type RefreshFn = () => Promise<string>;
 type LogoutFn = () => void;
 
+type BroadcastMessage = { type: "TOKEN_REFRESHED"; accessToken: string } | { type: "LOGGED_OUT" };
+
 export class TokenManager {
   private tokenData: TokenData | null = null;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private refreshPromise: Promise<string> | null = null;
+  private channel: BroadcastChannel | null = null;
+
+  constructor() {
+    if (typeof BroadcastChannel !== "undefined") {
+      this.channel = new BroadcastChannel("access_token_sync");
+
+      this.channel.onmessage = (event: MessageEvent<BroadcastMessage>) => {
+        const msg = event.data;
+
+        if (msg.type === "TOKEN_REFRESHED") {
+          this.setTokenSilent(msg.accessToken);
+          this.refreshPromise = null;
+        }
+
+        if (msg.type === "LOGGED_OUT") {
+          this.clearSilent();
+        }
+      };
+    }
+  }
 
   setToken(accessToken: string): void {
+    this.setTokenSilent(accessToken);
+    this.channel?.postMessage({
+      type: "TOKEN_REFRESHED",
+      accessToken,
+    } satisfies BroadcastMessage);
+  }
+
+  private setTokenSilent(accessToken: string): void {
     const payload = this.parseJwtPayload(accessToken);
     const expiresAt = payload.exp * 1000;
-
     this.tokenData = { accessToken, expiresAt };
     this.scheduleRefresh(expiresAt);
   }
@@ -29,6 +58,11 @@ export class TokenManager {
   }
 
   clear(): void {
+    this.clearSilent();
+    this.channel?.postMessage({ type: "LOGGED_OUT" } satisfies BroadcastMessage);
+  }
+
+  private clearSilent(): void {
     this.tokenData = null;
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
@@ -42,6 +76,21 @@ export class TokenManager {
       return this.tokenData.accessToken;
     }
 
+    if (typeof navigator !== "undefined" && navigator.locks) {
+      return navigator.locks.request("auth_refresh_lock", async () => {
+        if (!this.isExpired() && this.tokenData) {
+          return this.tokenData.accessToken;
+        }
+
+        return this.doRefresh(refreshFn, onLogout);
+      });
+    }
+
+    // fallback for SSR / environments without Web Locks (e.g. React Native)
+    return this.doRefresh(refreshFn, onLogout);
+  }
+
+  private doRefresh(refreshFn: RefreshFn, onLogout: LogoutFn): Promise<string | null> {
     if (!this.refreshPromise) {
       this.refreshPromise = refreshFn()
         .then((token) => {
@@ -58,6 +107,12 @@ export class TokenManager {
     }
 
     return this.refreshPromise;
+  }
+
+  destroy(): void {
+    this.clearSilent();
+    this.channel?.close();
+    this.channel = null;
   }
 
   private scheduleRefresh(expiresAt: number): void {

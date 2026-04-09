@@ -11,7 +11,10 @@ export interface AuditQueryParams {
 }
 
 export class AuditModule {
-  constructor(private http: HttpClient) {}
+  private http: HttpClient;
+  constructor(http: HttpClient) {
+    this.http = http;
+  }
 
   getLogs(params?: AuditQueryParams): Promise<PaginatedResponse<AuditLogResponse>> {
     return this.http.get<PaginatedResponse<AuditLogResponse>>("/audit", {
