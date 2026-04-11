@@ -1,13 +1,14 @@
-import { Entity, Column, Unique } from 'typeorm';
+import { Entity, Column, Unique, OneToMany } from 'typeorm';
 import { BaseEntity } from 'src/database/base.entity';
+import { UserRoleEntity } from '../rbac/user-role.entity';
 
 @Entity('users')
-@Unique(['email', 'tenantId']) // ← the critical constraint: unique per tenant, not globally
+@Unique(['email', 'tenantId'])
 export class UserEntity extends BaseEntity {
   @Column()
   email: string;
 
-  @Column({ name: 'password_hash', select: false }) // select: false = NEVER returned by default
+  @Column({ name: 'password_hash', select: false })
   passwordHash: string;
 
   @Column({ name: 'tenant_id' })
@@ -15,4 +16,7 @@ export class UserEntity extends BaseEntity {
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
+
+  @OneToMany(() => UserRoleEntity, (userRole) => userRole.user)
+  userRoles: UserRoleEntity[];
 }

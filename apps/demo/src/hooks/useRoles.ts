@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getsdk } from "../sdk";
 import type { RoleResponse } from "../types";
 
@@ -7,29 +7,42 @@ export function useRoles() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    getsdk()
-      .roles.getRoles()
-      .then(setRoles)
-      .catch((e) => setError(e.message))
-      .finally(() => setIsLoading(false));
+  const fetchRoles = useCallback(async () => {
+    try {
+      const data = await getsdk().roles.getRoles();
+      setRoles(data);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load roles");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const createRole = async (name: string) => {
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
+
+  const createRole = useCallback(async (name: string) => {
     const role = await getsdk().roles.createRole(name);
     setRoles((prev) => [...prev, role]);
     return role;
-  };
+  }, []);
 
-  const assignPermission = async (roleId: string, permission: string) => {
-    await getsdk().roles.assignPermission(roleId, permission);
-    const updated = await getsdk().roles.getRoles();
-    setRoles(updated);
-  };
+  const assignPermission = useCallback(
+    async (roleId: string, permission: string) => {
+      await getsdk().roles.assignPermission(roleId, permission);
+      await fetchRoles();
+    },
+    [fetchRoles],
+  );
 
-  const assignRoleToUser = async (userId: string, roleId: string) => {
-    await getsdk().roles.assignRoleToUser(userId, roleId);
-  };
+  const removePermission = useCallback(
+    async (roleId: string, permission: string) => {
+      await getsdk().roles.removePermissionFromRole(roleId, permission);
+      await fetchRoles();
+    },
+    [fetchRoles],
+  );
 
-  return { roles, isLoading, error, createRole, assignPermission, assignRoleToUser };
+  return { roles, isLoading, error, createRole, assignPermission, removePermission };
 }

@@ -117,7 +117,18 @@ export class UserService {
   }
 
   async findAllByTenant(tenantId: string) {
-    return this.userRepository.findByTenant(tenantId);
+    const users = await this.userRepository.findByTenant(tenantId);
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      roles: (user.userRoles ?? []).map((ur) => ({
+        id: ur.role.id,
+        name: ur.role.name,
+      })),
+    }));
   }
 
   private toUserResponse(user: {

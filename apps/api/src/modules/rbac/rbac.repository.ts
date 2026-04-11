@@ -55,7 +55,21 @@ export class RbacRepository {
   async assignPermissionToRole(roleId: string, permissionId: string) {
     await this.dataSource.query(
       `INSERT INTO role_permissions (role_id, permission_id)
-     VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [roleId, permissionId],
+    );
+  }
+
+  async removeUserRole(userId: string, roleId: string): Promise<void> {
+    await this.userRoleRepo.delete({ userId, roleId });
+  }
+
+  async removePermissionFromRole(
+    roleId: string,
+    permissionId: string,
+  ): Promise<void> {
+    await this.dataSource.query(
+      `DELETE FROM role_permissions WHERE role_id = $1 AND permission_id = $2`,
       [roleId, permissionId],
     );
   }

@@ -37,6 +37,7 @@ export class UserRepository extends Repository<UserEntity> {
   async findByTenant(tenantId: string) {
     return this.find({
       where: { tenantId },
+      relations: ['userRoles', 'userRoles.role'],
       order: { createdAt: 'ASC' },
     });
   }

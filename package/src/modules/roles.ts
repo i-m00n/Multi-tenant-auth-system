@@ -22,4 +22,12 @@ export class RolesModule {
   assignRoleToUser(userId: string, roleId: string): Promise<MessageResponse> {
     return this.http.post<MessageResponse>(`/users/${userId}/roles`, { roleId });
   }
+
+  removePermissionFromRole(roleId: string, permission: string): Promise<MessageResponse> {
+    return this.http.delete<MessageResponse>(`/roles/${roleId}/permissions/${encodeURIComponent(permission)}`);
+  }
+
+  removeRoleFromUser(userId: string, roleId: string): Promise<MessageResponse> {
+    return this.http.delete<MessageResponse>(`/users/${userId}/roles/${roleId}`);
+  }
 }

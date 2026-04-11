@@ -13,6 +13,8 @@ import {
   RBAC_EVENTS,
   RoleAssignedEvent,
   RoleCreatedEvent,
+  RoleRemovedEvent,
+  PermissionRemovedEvent,
 } from 'src/common/events/rbac.events';
 
 @Injectable()
@@ -86,7 +88,6 @@ export class RbacService {
 
     const permission =
       await this.permissionRepository.findByName(permissionName);
-
     if (!permission)
       throw new NotFoundException(`Permission '${permissionName}' not found`);
 
@@ -108,6 +109,7 @@ export class RbacService {
 
     const existing = await this.rbacRepository.findUserRole(userId, roleId);
     if (existing) throw new ConflictException('User already has this role');
+
     await this.rbacRepository.assignRole(userId, roleId, tenantId);
 
     this.eventEmitter.emit(
@@ -123,5 +125,74 @@ export class RbacService {
       }),
     );
     return;
+  }
+
+  async removeRoleFromUser(
+    userId: string,
+    roleId: string,
+    tenantId: string,
+    currentUserId: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<void> {
+    const role = await this.rbacRepository.findRoleById(roleId);
+    if (!role) throw new NotFoundException('Role not found');
+    if (role.tenantId !== tenantId)
+      throw new ForbiddenException('Role does not belong to this tenant');
+
+    const existing = await this.rbacRepository.findUserRole(userId, roleId);
+    if (!existing) throw new NotFoundException('User does not have this role');
+
+    await this.rbacRepository.removeUserRole(userId, roleId);
+
+    this.eventEmitter.emit(
+      RBAC_EVENTS.ROLE_REMOVED,
+      new RoleRemovedEvent({
+        tenantId,
+        removedByUserId: currentUserId,
+        removedFromUserId: userId,
+        roleId,
+        roleName: role.name,
+        ipAddress,
+        userAgent,
+      }),
+    );
+  }
+
+  async removePermissionFromRole(
+    roleId: string,
+    permissionName: string,
+    tenantId: string,
+    currentUserId: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<void> {
+    const role = await this.rbacRepository.findRoleById(roleId);
+    if (!role) throw new NotFoundException('Role not found');
+    if (role.tenantId !== tenantId)
+      throw new ForbiddenException('Role does not belong to this tenant');
+    if (role.isSystem)
+      throw new ForbiddenException('Cannot modify system roles');
+
+    const permission = await this.permissionRepository.findByName(
+      permissionName as Permission,
+    );
+    if (!permission)
+      throw new NotFoundException(`Permission '${permissionName}' not found`);
+
+    await this.rbacRepository.removePermissionFromRole(roleId, permission.id);
+
+    this.eventEmitter.emit(
+      RBAC_EVENTS.PERMISSION_REMOVED,
+      new PermissionRemovedEvent({
+        tenantId,
+        removedByUserId: currentUserId,
+        roleId,
+        roleName: role.name,
+        permission: permissionName,
+        ipAddress,
+        userAgent,
+      }),
+    );
   }
 }

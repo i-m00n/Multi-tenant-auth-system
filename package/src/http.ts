@@ -65,6 +65,10 @@ export class HttpClient {
     });
   }
 
+  async delete<T>(path: string): Promise<T> {
+    return this.request<T>(this.url(path), { method: "DELETE" });
+  }
+
   private async request<T>(url: string, init: RequestInit): Promise<T> {
     const token = await this.tokenManager.ensureFresh(() => this.refreshToken(), this.onLogout);
 

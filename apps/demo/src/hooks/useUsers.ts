@@ -26,17 +26,22 @@ export function useUsers() {
     async (userId: string, roleId: string) => {
       try {
         await getsdk().roles.assignRoleToUser(userId, roleId);
-        await fetchUsers();
       } catch (e: unknown) {
-        if (e instanceof ConflictError) {
-          await fetchUsers();
-          return;
-        }
-        throw e;
+        if (!(e instanceof ConflictError)) throw e;
+      } finally {
+        await fetchUsers();
       }
     },
     [fetchUsers],
   );
 
-  return { users, isLoading, error, assignRole, refetch: fetchUsers };
+  const removeRole = useCallback(
+    async (userId: string, roleId: string) => {
+      await getsdk().roles.removeRoleFromUser(userId, roleId);
+      await fetchUsers();
+    },
+    [fetchUsers],
+  );
+
+  return { users, isLoading, error, assignRole, removeRole, refetch: fetchUsers };
 }

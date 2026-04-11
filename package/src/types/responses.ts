@@ -4,6 +4,7 @@ export interface UserResponse {
   tenantId: string;
   isActive: boolean;
   createdAt: string;
+  roles: { id: string; name: string }[];
 }
 
 export interface MeResponse extends UserResponse {

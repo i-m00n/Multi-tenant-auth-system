@@ -17,8 +17,9 @@ import {
   RBAC_EVENTS,
   RoleAssignedEvent,
   RoleCreatedEvent,
+  RoleRemovedEvent,
+  PermissionRemovedEvent,
 } from '../../common/events/rbac.events';
-
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
@@ -144,14 +145,44 @@ export class AuditService {
     });
   }
 
-  // internal write helper
+  @OnEvent(RBAC_EVENTS.ROLE_REMOVED)
+  async onRoleRemoved(event: RoleRemovedEvent) {
+    await this.write({
+      tenantId: event.tenantId,
+      userId: event.removedByUserId,
+      action: RBAC_EVENTS.ROLE_REMOVED,
+      resourceType: 'role',
+      resourceId: event.roleId,
+      ipAddress: event.ipAddress,
+      userAgent: event.userAgent,
+      metadata: {
+        roleName: event.roleName,
+        removedFromUserId: event.removedFromUserId,
+      },
+    });
+  }
+
+  @OnEvent(RBAC_EVENTS.PERMISSION_REMOVED)
+  async onPermissionRemoved(event: PermissionRemovedEvent) {
+    await this.write({
+      tenantId: event.tenantId,
+      userId: event.removedByUserId,
+      action: RBAC_EVENTS.PERMISSION_REMOVED,
+      resourceType: 'role',
+      resourceId: event.roleId,
+      ipAddress: event.ipAddress,
+      userAgent: event.userAgent,
+      metadata: {
+        roleName: event.roleName,
+        permission: event.permission,
+      },
+    });
+  }
 
   private async write(data: Parameters<AuditRepository['createLog']>[0]) {
     try {
       await this.auditRepository.createLog(data);
     } catch (error) {
-      // log the failure but never propagate it
-      // a failed audit write must never roll back a successful operation
       this.logger.error(
         `Failed to write audit log for action "${data.action}": ${String(error)}`,
       );

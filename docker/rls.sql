@@ -51,6 +51,12 @@ CREATE POLICY role_permissions_insert ON role_permissions
       SELECT id FROM roles WHERE tenant_id::uuid = app_current_tenant_id()
     )
   );
+CREATE POLICY role_permissions_delete ON role_permissions
+  FOR DELETE USING (
+    role_id IN (
+      SELECT id FROM roles WHERE tenant_id::uuid = app_current_tenant_id()
+    )
+  );
 
 -- user_roles
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
@@ -61,6 +67,8 @@ CREATE POLICY user_roles_select ON user_roles
   FOR SELECT USING (tenant_id::uuid = app_current_tenant_id());
 CREATE POLICY user_roles_insert ON user_roles
   FOR INSERT WITH CHECK (tenant_id::uuid = app_current_tenant_id());
+CREATE POLICY user_roles_delete ON user_roles
+  FOR DELETE USING (tenant_id::uuid = app_current_tenant_id());
 
 -- refresh_tokens
 ALTER TABLE refresh_tokens ENABLE ROW LEVEL SECURITY;

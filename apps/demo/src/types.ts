@@ -1,6 +1,13 @@
-import type { MeResponse, RoleResponse, AuditLogResponse, PaginatedResponse, AuditQueryParams } from "@auth-moon/sdk";
+import type {
+  UserResponse,
+  MeResponse,
+  RoleResponse,
+  AuditLogResponse,
+  PaginatedResponse,
+  AuditQueryParams,
+} from "@auth-moon/sdk";
 
-export type { MeResponse, RoleResponse, AuditLogResponse, PaginatedResponse, AuditQueryParams };
+export type { UserResponse, MeResponse, RoleResponse, AuditLogResponse, PaginatedResponse, AuditQueryParams };
 
 export interface AuthState {
   user: MeResponse | null;

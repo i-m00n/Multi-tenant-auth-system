@@ -1,5 +1,13 @@
-// rbac/rbac.controller.ts
-import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Req,
+  HttpCode,
+} from '@nestjs/common';
 import { RbacService } from './rbac.service';
 import { TenantContext } from '../tenant/tenant-context.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
@@ -12,6 +20,7 @@ import {
   AssignRoleSchema,
 } from './rbac.schemas';
 import express from 'express';
+
 @Controller(':tenant/api/roles')
 export class RbacController {
   constructor(
@@ -34,14 +43,12 @@ export class RbacController {
     @CurrentUser() admin: { id: string },
   ) {
     const tenantId = this.tenantContext.requireTenantId();
-    const ipAddress = req.ip ?? '';
-    const userAgent = req.headers['user-agent'] ?? '';
     return this.rbacService.createRole(
       body.name,
       tenantId,
       admin.id,
-      ipAddress,
-      userAgent,
+      req.ip ?? '',
+      req.headers['user-agent'] ?? '',
     );
   }
 
@@ -57,6 +64,26 @@ export class RbacController {
       roleId,
       body.permission as Permission,
       tenantId,
+    );
+  }
+
+  @Delete(':roleId/permissions/:permission')
+  @HttpCode(204)
+  @RequirePermissions(PERMISSIONS.ROLE_ASSIGN)
+  removePermission(
+    @Param('roleId') roleId: string,
+    @Param('permission') permission: string,
+    @Req() req: express.Request,
+    @CurrentUser() admin: { id: string },
+  ) {
+    const tenantId = this.tenantContext.requireTenantId();
+    return this.rbacService.removePermissionFromRole(
+      roleId,
+      decodeURIComponent(permission),
+      tenantId,
+      admin.id,
+      req.ip ?? '',
+      req.headers['user-agent'] ?? '',
     );
   }
 }
@@ -85,15 +112,33 @@ export class UserRoleController {
     @Req() req: express.Request,
   ) {
     const tenantId = this.tenantContext.requireTenantId();
-    const ip = req.ip ?? '';
-    const ua = req.headers['user-agent'] ?? '';
     return this.rbacService.assignRoleToUserSafe(
       userId,
       body.roleId,
       tenantId,
       admin.id,
-      ip,
-      ua,
+      req.ip ?? '',
+      req.headers['user-agent'] ?? '',
+    );
+  }
+
+  @Delete(':userId/roles/:roleId')
+  @HttpCode(204)
+  @RequirePermissions(PERMISSIONS.ROLE_ASSIGN)
+  removeRole(
+    @CurrentUser() admin: { id: string },
+    @Param('userId') userId: string,
+    @Param('roleId') roleId: string,
+    @Req() req: express.Request,
+  ) {
+    const tenantId = this.tenantContext.requireTenantId();
+    return this.rbacService.removeRoleFromUser(
+      userId,
+      roleId,
+      tenantId,
+      admin.id,
+      req.ip ?? '',
+      req.headers['user-agent'] ?? '',
     );
   }
 }
