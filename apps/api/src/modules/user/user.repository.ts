@@ -33,4 +33,11 @@ export class UserRepository extends Repository<UserEntity> {
     const user = this.create(data);
     return this.save(user);
   }
+
+  async findByTenant(tenantId: string) {
+    return this.find({
+      where: { tenantId },
+      order: { createdAt: 'ASC' },
+    });
+  }
 }

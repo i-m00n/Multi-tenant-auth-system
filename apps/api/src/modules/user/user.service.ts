@@ -116,6 +116,10 @@ export class UserService {
     return this.toUserResponse(user);
   }
 
+  async findAllByTenant(tenantId: string) {
+    return this.userRepository.findByTenant(tenantId);
+  }
+
   private toUserResponse(user: {
     id: string;
     email: string;

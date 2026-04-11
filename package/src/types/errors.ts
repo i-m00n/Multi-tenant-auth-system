@@ -47,3 +47,10 @@ export class ValidationError extends SdkError {
     this.errors = errors;
   }
 }
+
+export class ConflictError extends SdkError {
+  constructor(body: unknown) {
+    super("Resource already exists", 409, body);
+    this.name = "ConflictError";
+  }
+}

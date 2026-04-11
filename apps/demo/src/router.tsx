@@ -4,6 +4,8 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { RolesPage } from "./pages/RolesPage";
 import { AuditPage } from "./pages/AuditPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { UsersPage } from "./pages/UsersPage";
+import { RegisterPage } from "./pages/RegisterPage";
 
 const router = createBrowserRouter([
   {
@@ -14,11 +16,20 @@ const router = createBrowserRouter([
     path: "/:tenant/login",
     element: <LoginPage />,
   },
+  { path: "/:tenant/register", element: <RegisterPage /> },
   {
     path: "/:tenant/dashboard",
     element: (
       <ProtectedRoute>
         <DashboardPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/:tenant/users",
+    element: (
+      <ProtectedRoute requirePermission="user:read">
+        <UsersPage />
       </ProtectedRoute>
     ),
   },

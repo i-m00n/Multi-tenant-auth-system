@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserController } from './user.controller';
+import { UserController, UsersController } from './user.controller';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
 import { UserEntity } from './user.entity';
@@ -9,7 +9,7 @@ import { TenantModule } from '../tenant/tenant.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserEntity]), RbacModule, TenantModule],
-  controllers: [UserController],
+  controllers: [UserController, UsersController],
   providers: [UserService, UserRepository],
   exports: [UserService, UserRepository],
 })

@@ -1,4 +1,12 @@
-import { AuthError, ForbiddenError, NotFoundError, RateLimitError, SdkError, ValidationError } from "./types/errors";
+import {
+  AuthError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  RateLimitError,
+  SdkError,
+  ValidationError,
+} from "./types/errors";
 import { TokenManager } from "./token-manager";
 
 export interface HttpClientOptions {
@@ -103,13 +111,15 @@ export class HttpClient {
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (response.ok) {
-      if (response.status === 204) return {} as T;
-      return response.json() as Promise<T>;
+      const text = await response.text();
+      if (!text) return {} as T;
+      return JSON.parse(text) as T;
     }
 
     let body: unknown;
     try {
-      body = await response.json();
+      const text = await response.text();
+      body = text ? JSON.parse(text) : { message: response.statusText };
     } catch {
       body = { message: response.statusText };
     }
@@ -135,6 +145,8 @@ export class HttpClient {
         throw new ForbiddenError(body);
       case 404:
         throw new NotFoundError(body);
+      case 409:
+        throw new ConflictError(body);
       case 429: {
         const retryAfter = parseInt(response.headers.get("retry-after") ?? "60", 10);
         throw new RateLimitError(retryAfter, body);

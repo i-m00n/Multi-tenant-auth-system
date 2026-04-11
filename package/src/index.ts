@@ -1,6 +1,14 @@
 export { createAuthClient, AuthClient, type AuthClientOptions } from "./client";
 
-export { SdkError, AuthError, ForbiddenError, NotFoundError, RateLimitError, ValidationError } from "./types/errors";
+export {
+  SdkError,
+  AuthError,
+  ForbiddenError,
+  NotFoundError,
+  RateLimitError,
+  ValidationError,
+  ConflictError,
+} from "./types/errors";
 
 export type {
   UserResponse,

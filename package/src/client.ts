@@ -40,6 +40,10 @@ export class AuthClient {
   get isAuthenticated(): boolean {
     return this.tokenManager.getToken() !== null;
   }
+
+  get tokenExpiresAt(): number | null {
+    return this.tokenManager.getExpiresAt();
+  }
 }
 
 export function createAuthClient(options: AuthClientOptions): AuthClient {

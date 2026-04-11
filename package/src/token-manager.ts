@@ -137,4 +137,8 @@ export class TokenManager {
     const json = atob(base64);
     return JSON.parse(json) as { exp: number };
   }
+
+  getExpiresAt(): number | null {
+    return this.tokenData?.expiresAt ?? null;
+  }
 }
