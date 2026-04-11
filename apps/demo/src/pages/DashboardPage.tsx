@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { PermissionGate } from "../components/PermissionGate";
 import { NavBar } from "../components/NavBar";
 import { SessionStatus } from "../components/SessionStatus";
 import { RateLimitButton } from "../components/RateLimitButton";
@@ -8,7 +7,6 @@ import { getsdk } from "../sdk";
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const slug = window.location.pathname.split("/")[1];
 
   const triggerLoginRateLimit = useCallback(async () => {
     for (let i = 0; i < 6; i++) {
@@ -26,56 +24,60 @@ export function DashboardPage() {
 
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
-          <h1>Welcome, {user?.email}</h1>
+          <h1 style={{ margin: "0 0 4px", fontSize: 22 }}>Welcome, {user?.email}</h1>
+          <p style={{ color: "#64748b", marginTop: 0, marginBottom: 24 }}>
+            Logged into tenant <strong>{user?.tenantId}</strong>
+          </p>
 
-          <div style={{ marginBottom: 24 }}>
-            <h3>Your Permissions</h3>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {user?.permissions.map((p) => (
-                <span
-                  key={p}
-                  style={{
-                    padding: "2px 10px",
-                    background: "#f1f5f9",
-                    borderRadius: 9999,
-                    fontSize: 13,
-                    fontFamily: "monospace",
-                  }}
-                >
-                  {p}
-                </span>
-              ))}
+          <div
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 8,
+              padding: 16,
+              marginBottom: 16,
+            }}
+          >
+            <h3 style={{ margin: "0 0 12px", fontSize: 14, color: "#475569" }}>Your Permissions</h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {user?.permissions.length ? (
+                user.permissions.map((p) => (
+                  <span
+                    key={p}
+                    style={{
+                      padding: "3px 10px",
+                      background: "#f1f5f9",
+                      borderRadius: 4,
+                      fontSize: 12,
+                      fontFamily: "monospace",
+                      color: "#0f172a",
+                    }}
+                  >
+                    {p}
+                  </span>
+                ))
+              ) : (
+                <span style={{ color: "#94a3b8", fontSize: 13 }}>No permissions assigned</span>
+              )}
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
-            <PermissionGate permission="user:read">
-              <a href={`/${slug}/users`} style={linkStyle}>
-                👥 Manage Users →
-              </a>
-            </PermissionGate>
-
-            <PermissionGate permission="role:read">
-              <a href={`/${slug}/roles`} style={linkStyle}>
-                🔑 Manage Roles →
-              </a>
-            </PermissionGate>
-
-            <PermissionGate permission="audit:read">
-              <a href={`/${slug}/audit`} style={linkStyle}>
-                📋 Audit Logs →
-              </a>
-            </PermissionGate>
-          </div>
-
-          <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 24 }}>
-            <h3>Demo: Rate Limiting</h3>
-            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 12 }}>
-              Fire 6 login attempts with wrong password to trigger Layer 2 rate limiting (login:{"{tenantId}"}:
-              {"{email}"}, 5/15min).
+          <div
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 8,
+              padding: 16,
+            }}
+          >
+            <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#475569" }}>Demo: Rate Limiting</h3>
+            <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 12px" }}>
+              Fires 6 login attempts with wrong password — triggers Layer 2 rate limit (
+              <code>
+                login:{"{tenantId}"}:{"{email}"}
+              </code>
+              , 5/15min).
             </p>
             <RateLimitButton
-              label="Trigger rate limit"
+              label="Fire login rate limit"
               testLabel="Fire login rate limit →"
               onTrigger={triggerLoginRateLimit}
             />
@@ -87,33 +89,21 @@ export function DashboardPage() {
 
           <div
             style={{
-              marginTop: 16,
+              marginTop: 12,
               padding: 16,
               border: "1px solid #e2e8f0",
               borderRadius: 8,
               fontSize: 13,
               color: "#64748b",
+              lineHeight: 1.6,
             }}
           >
-            <strong style={{ color: "#0f172a" }}>Multi-tab demo</strong>
-            <p style={{ margin: "8px 0 0" }}>
-              Open this page in another tab. Log out here — the other tab clears instantly via BroadcastChannel without
-              any interaction.
-            </p>
+            <strong style={{ color: "#0f172a", display: "block", marginBottom: 4 }}>Multi-tab demo</strong>
+            Open this page in another tab. Log out here — the other tab clears instantly via BroadcastChannel without
+            any interaction.
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-const linkStyle: React.CSSProperties = {
-  display: "inline-block",
-  padding: "10px 16px",
-  background: "#f8fafc",
-  border: "1px solid #e2e8f0",
-  borderRadius: 6,
-  textDecoration: "none",
-  color: "#0f172a",
-  fontWeight: 500,
-};
