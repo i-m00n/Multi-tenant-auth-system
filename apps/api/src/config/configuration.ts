@@ -47,5 +47,9 @@ export default () => {
         windowSeconds: parsed.RATE_LIMIT_API_WINDOW_SECONDS,
       },
     },
+    platform: {
+      adminEmail: parsed.PLATFORM_ADMIN_EMAIL,
+      adminPassword: parsed.PLATFORM_ADMIN_PASSWORD,
+    },
   };
 };

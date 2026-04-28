@@ -30,4 +30,7 @@ export const envSchema = z.object({
   RATE_LIMIT_REFRESH_WINDOW_SECONDS: z.coerce.number().default(900),
   RATE_LIMIT_API_LIMIT: z.coerce.number().default(100),
   RATE_LIMIT_API_WINDOW_SECONDS: z.coerce.number().default(60),
+
+  PLATFORM_ADMIN_EMAIL: z.email().default('admin@platform.local'),
+  PLATFORM_ADMIN_PASSWORD: z.string().min(12).default('PlatformPass123!'),
 });
