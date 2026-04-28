@@ -15,26 +15,16 @@ export function AuditPage() {
   const totalPages = result?.pagination.totalPages ?? 1;
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
+    <div className="max-w-5xl mx-auto px-6 py-8">
       <NavBar />
-      <h1 style={{ marginBottom: 4 }}>Audit Logs</h1>
-      <p style={{ color: "#64748b", marginBottom: 24 }}>
+      <h1 className="text-2xl font-semibold text-slate-900 mb-1">Audit Logs</h1>
+      <p className="text-sm text-slate-500 mb-6">
         Append-only — no entry can be modified or deleted, even directly in the DB. Replay attacks are highlighted in
         red.
       </p>
 
-      {/* filter bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          marginBottom: 20,
-          background: "#f8fafc",
-          border: "1px solid #e2e8f0",
-          borderRadius: 8,
-          padding: 12,
-        }}
-      >
+      {/* filter */}
+      <div className="flex gap-3 mb-5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
         <input
           value={action}
           onChange={(e) => {
@@ -42,13 +32,7 @@ export function AuditPage() {
             setPage(1);
           }}
           placeholder="Filter by action (e.g. auth.login.failed)"
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            border: "1px solid #e2e8f0",
-            borderRadius: 4,
-            fontSize: 14,
-          }}
+          className="flex-1 px-3 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
         />
         {action && (
           <button
@@ -56,14 +40,7 @@ export function AuditPage() {
               setAction("");
               setPage(1);
             }}
-            style={{
-              padding: "8px 12px",
-              background: "white",
-              border: "1px solid #e2e8f0",
-              borderRadius: 4,
-              cursor: "pointer",
-              color: "#64748b",
-            }}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-500 hover:bg-slate-50"
           >
             Clear
           </button>
@@ -71,40 +48,32 @@ export function AuditPage() {
       </div>
 
       {isLoading ? (
-        <div style={{ color: "#94a3b8", padding: 24, textAlign: "center" }}>Loading logs...</div>
+        <div className="py-12 text-center text-slate-400 text-sm">Loading logs...</div>
       ) : (
         <>
-          <div
-            style={{
-              border: "1px solid #e2e8f0",
-              borderRadius: 8,
-              overflow: "hidden",
-              marginBottom: 16,
-            }}
-          >
+          <div className="border border-slate-200 rounded-lg overflow-hidden mb-4">
             <AuditLogTable logs={result?.data ?? []} />
           </div>
 
-          {/* pagination */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              fontSize: 14,
-              color: "#64748b",
-            }}
-          >
+          <div className="flex items-center justify-between text-sm text-slate-500">
             <span>
               Page {result?.pagination.page ?? 1} of {totalPages}
               {" · "}
               {result?.pagination.total ?? 0} total entries
             </span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setPage((p) => p - 1)} disabled={page === 1} style={paginationBtn}>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => p - 1)}
+                disabled={page === 1}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50 disabled:opacity-40"
+              >
                 ← Previous
               </button>
-              <button onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages} style={paginationBtn}>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= totalPages}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-md text-xs hover:bg-slate-50 disabled:opacity-40"
+              >
                 Next →
               </button>
             </div>
@@ -114,12 +83,3 @@ export function AuditPage() {
     </div>
   );
 }
-
-const paginationBtn: React.CSSProperties = {
-  padding: "6px 12px",
-  background: "white",
-  border: "1px solid #e2e8f0",
-  borderRadius: 4,
-  cursor: "pointer",
-  fontSize: 13,
-};

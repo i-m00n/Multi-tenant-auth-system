@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { getsdk } from "../sdk";
+import { getSdk } from "../sdk";
 import { RateLimitError, ValidationError } from "@auth-moon/sdk";
 import { RateLimitButton } from "../components/RateLimitButton";
 
@@ -16,7 +16,6 @@ export function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // countdown for the form's own rate limit
   useEffect(() => {
     if (retryAfter === null || retryAfter <= 0) {
       if (retryAfter === 0) setRetryAfter(null);
@@ -32,19 +31,18 @@ export function RegisterPage() {
     setFieldErrors({});
     setIsLoading(true);
     try {
-      await getsdk().auth.register(email, password);
+      await getSdk().auth.register(email, password);
       setSuccess(true);
       setTimeout(() => navigate(`/${tenant}/login`), 1500);
     } catch (e: unknown) {
       if (e instanceof RateLimitError) {
         setRetryAfter(e.retryAfter);
-        setError(`Too many attempts. Try again in ${e.retryAfter}s.`);
       } else if (e instanceof ValidationError) {
-        const errors: Record<string, string> = {};
+        const errs: Record<string, string> = {};
         e.errors.forEach(({ field, message }) => {
-          errors[field] = message;
+          errs[field] = message;
         });
-        setFieldErrors(errors);
+        setFieldErrors(errs);
       } else {
         setError("Something went wrong.");
       }
@@ -53,216 +51,87 @@ export function RegisterPage() {
     }
   };
 
-  // throws RateLimitError — RateLimitButton catches it and shows its own countdown
   const triggerRateLimit = useCallback(async () => {
     const attempts = Array.from({ length: 12 }, (_, i) =>
-      getsdk().auth.register(`flood-${i}-${Math.random()}@test.com`, "Weakpass1!"),
+      getSdk().auth.register(`flood-${i}-${Math.random()}@test.com`, "Weakpass1!"),
     );
     await Promise.allSettled(attempts);
-    // fire one more to guarantee hitting the limit and getting the error
-    await getsdk().auth.register(`flood-final-${Math.random()}@test.com`, "Weakpass1!");
+    await getSdk().auth.register(`flood-final-${Math.random()}@test.com`, "Weakpass1!");
   }, []);
 
   if (success) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f8fafc",
-        }}
-      >
-        <div
-          style={{
-            textAlign: "center",
-            padding: 32,
-            background: "white",
-            border: "1px solid #e2e8f0",
-            borderRadius: 12,
-          }}
-        >
-          <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-          <p style={{ margin: 0, color: "#16a34a", fontWeight: 500 }}>Registered! Redirecting to login...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center p-8 bg-white border border-slate-200 rounded-xl">
+          <div className="text-3xl mb-3">✓</div>
+          <p className="text-green-600 font-medium">Registered! Redirecting to login...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#f8fafc",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          background: "white",
-          border: "1px solid #e2e8f0",
-          borderRadius: 12,
-          padding: 32,
-        }}
-      >
-        <div style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#94a3b8",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: 4,
-            }}
-          >
-            {tenant}
-          </div>
-          <h1 style={{ margin: 0, fontSize: 22, color: "#0f172a" }}>Create account</h1>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-sm bg-white border border-slate-200 rounded-xl p-8">
+        <div className="mb-6">
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">{tenant}</div>
+          <h1 className="text-xl font-semibold text-slate-900">Create account</h1>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 13,
-                fontWeight: 500,
-                color: "#475569",
-                marginBottom: 6,
-              }}
-            >
-              Email
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "9px 12px",
-                border: "1px solid #e2e8f0",
-                borderRadius: 6,
-                fontSize: 14,
-                boxSizing: "border-box",
-                outline: "none",
-              }}
+              className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
-            {fieldErrors.email && (
-              <p style={{ margin: "4px 0 0", color: "#dc2626", fontSize: 13 }}>{fieldErrors.email}</p>
-            )}
+            {fieldErrors.email && <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>}
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 13,
-                fontWeight: 500,
-                color: "#475569",
-                marginBottom: 6,
-              }}
-            >
-              Password
-            </label>
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
               required
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "9px 12px",
-                border: "1px solid #e2e8f0",
-                borderRadius: 6,
-                fontSize: 14,
-                boxSizing: "border-box",
-                outline: "none",
-              }}
+              className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
-            {fieldErrors.password && (
-              <p style={{ margin: "4px 0 0", color: "#dc2626", fontSize: 13 }}>{fieldErrors.password}</p>
-            )}
-            <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8" }}>
-              Min 12 characters, one uppercase, one number
-            </p>
+            {fieldErrors.password && <p className="text-xs text-red-600 mt-1">{fieldErrors.password}</p>}
+            <p className="text-xs text-slate-400 mt-1">Min 12 characters, one uppercase, one number</p>
           </div>
 
-          {error && (
-            <div
-              style={{
-                padding: "10px 12px",
-                background: "#fee2e2",
-                color: "#dc2626",
-                borderRadius: 6,
-                fontSize: 13,
-                marginBottom: 16,
-              }}
-            >
-              {retryAfter !== null && retryAfter > 0 ? `Too many attempts. Try again in ${retryAfter}s.` : error}
+          {(error || retryAfter) && (
+            <div className="px-3 py-2 bg-red-50 text-red-600 rounded-md text-xs">
+              {retryAfter ? `Too many attempts. Try again in ${retryAfter}s.` : error}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={isLoading || retryAfter !== null}
-            style={{
-              width: "100%",
-              padding: "10px",
-              background: isLoading || retryAfter !== null ? "#94a3b8" : "#0f172a",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: isLoading || retryAfter !== null ? "not-allowed" : "pointer",
-              marginBottom: 12,
-            }}
+            disabled={isLoading || !!retryAfter}
+            className="w-full py-2.5 bg-slate-900 text-white text-sm font-medium rounded-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? "Creating account..." : "Register"}
           </button>
         </form>
 
-        {/* flood demo — uses RateLimitButton so it handles its own countdown */}
-        <div
-          style={{
-            padding: 12,
-            background: "#f8fafc",
-            border: "1px solid #e2e8f0",
-            borderRadius: 6,
-            marginBottom: 16,
-          }}
-        >
-          <p style={{ margin: "0 0 8px", fontSize: 12, color: "#64748b" }}>
-            Demo: flood the register endpoint to trigger rate limiting
-          </p>
+        <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+          <p className="text-xs text-slate-500 mb-2">Demo: flood the register endpoint to trigger rate limiting</p>
           <RateLimitButton label="Register" testLabel="Flood register endpoint →" onTrigger={triggerRateLimit} />
         </div>
 
-        <div
-          style={{
-            paddingTop: 16,
-            borderTop: "1px solid #f1f5f9",
-            textAlign: "center",
-            fontSize: 13,
-            color: "#64748b",
-          }}
-        >
+        <p className="mt-4 text-center text-xs text-slate-500">
           Already have an account?{" "}
-          <Link to={`/${tenant}/login`} style={{ color: "#0f172a", fontWeight: 500, textDecoration: "none" }}>
+          <Link to={`/${tenant}/login`} className="text-slate-900 font-medium hover:underline">
             Sign in
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   );

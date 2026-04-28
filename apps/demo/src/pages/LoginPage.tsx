@@ -1,175 +1,153 @@
-import { useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useState, useCallback } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { RateLimitError, ValidationError, AuthError } from "@auth-moon/sdk";
 
+interface DemoCredential {
+  tenant: string;
+  admin: string;
+  password: string;
+  viewers: string[];
+  url: string;
+}
+
 export function LoginPage() {
-  const { tenant } = useParams<{ tenant: string }>();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const slug = window.location.pathname.split("/")[1];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [credentials, setCredentials] = useState<DemoCredential[] | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-
     try {
       await login(email, password);
-      navigate(`/${tenant}/dashboard`);
+      navigate(`/${slug}/dashboard`);
     } catch (err) {
       if (err instanceof RateLimitError) {
-        setRetryAfter(err.retryAfter);
-        setError(`Too many attempts. Try again in ${err.retryAfter}s.`);
+        setError(`Too many attempts. Retry in ${err.retryAfter}s`);
+      } else if (err instanceof AuthError) {
+        setError("Invalid email or password");
       } else if (err instanceof ValidationError) {
         setError(err.errors.map((e) => e.message).join(", "));
-      } else if (err instanceof AuthError) {
-        setError("Invalid email or password.");
       } else {
-        setError("Something went wrong.");
+        setError("Something went wrong");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSeed = useCallback(async () => {
+    setIsSeeding(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/demo/seed`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { credentials: DemoCredential[] };
+      setCredentials(data.credentials);
+    } catch {
+      setError("Seeding failed — is the API running?");
+    } finally {
+      setIsSeeding(false);
+    }
+  }, []);
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#f8fafc",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          background: "white",
-          border: "1px solid #e2e8f0",
-          borderRadius: 12,
-          padding: 32,
-        }}
-      >
-        {/* header */}
-        <div style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#94a3b8",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: 4,
-            }}
-          >
-            {tenant}
-          </div>
-          <h1 style={{ margin: 0, fontSize: 22, color: "#0f172a" }}>Sign in</h1>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <div className="bg-white border border-slate-200 rounded-xl p-8 mb-4">
+          <h1 className="text-xl font-semibold text-slate-900 mb-1">Sign in</h1>
+          <p className="text-sm text-slate-500 mb-6">
+            Tenant: <strong>{slug}</strong>
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                required
+              />
+            </div>
+
+            {error && <p className="text-xs text-red-600">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-2.5 bg-slate-900 text-white text-sm font-medium rounded-md hover:bg-slate-800 disabled:opacity-50"
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
+            </button>
+          </form>
+
+          <p className="text-xs text-slate-400 mt-4 text-center">
+            <Link to={`/${slug}/register`} className="text-slate-600 hover:underline">
+              Create an account
+            </Link>
+            {" · "}
+            <Link to="/platform/login" className="text-slate-600 hover:underline">
+              Platform admin
+            </Link>
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#475569", marginBottom: 6 }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "9px 12px",
-                border: "1px solid #e2e8f0",
-                borderRadius: 6,
-                fontSize: 14,
-                boxSizing: "border-box",
-                outline: "none",
-              }}
-            />
-          </div>
+        {/* demo seed */}
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <p className="text-xs text-slate-500 mb-3">First time here? Load demo data to explore the full system.</p>
+          <button
+            onClick={handleSeed}
+            disabled={isSeeding}
+            className="w-full py-2.5 border border-slate-200 text-sm font-medium text-slate-700 rounded-md hover:bg-slate-50 disabled:opacity-50"
+          >
+            {isSeeding ? "Seeding..." : "⚡ Load Demo Data"}
+          </button>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#475569", marginBottom: 6 }}>
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              required
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "9px 12px",
-                border: "1px solid #e2e8f0",
-                borderRadius: 6,
-                fontSize: 14,
-                boxSizing: "border-box",
-                outline: "none",
-              }}
-            />
-          </div>
-
-          {error && (
-            <div
-              style={{
-                padding: "10px 12px",
-                background: "#fee2e2",
-                color: "#dc2626",
-                borderRadius: 6,
-                fontSize: 13,
-                marginBottom: 16,
-              }}
-            >
-              {error}
+          {credentials && (
+            <div className="mt-4 space-y-3">
+              {credentials.map((cred) => (
+                <div key={cred.tenant} className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  <div className="font-semibold text-sm mb-2">{cred.tenant}</div>
+                  <div className="text-xs text-slate-500 mb-1">
+                    Admin: <code className="bg-slate-100 px-1 rounded">{cred.admin}</code>
+                  </div>
+                  <div className="text-xs text-slate-500 mb-3">
+                    Password: <code className="bg-slate-100 px-1 rounded">{cred.password}</code>
+                  </div>
+                  <div className="text-xs text-slate-400 mb-3">Viewers: {cred.viewers.join(", ")}</div>
+                  <button
+                    onClick={() => {
+                      window.location.href = cred.url;
+                    }}
+                    className="px-3 py-1.5 border border-slate-200 text-xs font-medium rounded hover:bg-slate-100"
+                  >
+                    Go to {cred.tenant} →
+                  </button>
+                </div>
+              ))}
             </div>
           )}
-
-          <button
-            type="submit"
-            disabled={isLoading || retryAfter !== null}
-            style={{
-              width: "100%",
-              padding: "10px",
-              background: isLoading || retryAfter !== null ? "#94a3b8" : "#0f172a",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: isLoading || retryAfter !== null ? "not-allowed" : "pointer",
-            }}
-          >
-            {isLoading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-
-        <div
-          style={{
-            marginTop: 20,
-            paddingTop: 20,
-            borderTop: "1px solid #f1f5f9",
-            textAlign: "center",
-            fontSize: 13,
-            color: "#64748b",
-          }}
-        >
-          Don't have an account?{" "}
-          <Link to={`/${tenant}/register`} style={{ color: "#0f172a", fontWeight: 500, textDecoration: "none" }}>
-            Register
-          </Link>
         </div>
       </div>
     </div>

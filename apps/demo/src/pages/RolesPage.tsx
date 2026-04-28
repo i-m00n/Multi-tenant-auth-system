@@ -41,159 +41,88 @@ export function RolesPage() {
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
+    <div className="max-w-5xl mx-auto px-6 py-8">
       <NavBar />
-      <h1 style={{ marginBottom: 4 }}>Roles</h1>
-      <p style={{ color: "#64748b", marginBottom: 24 }}>
+      <h1 className="text-2xl font-semibold text-slate-900 mb-1">Roles</h1>
+      <p className="text-sm text-slate-500 mb-6">
         {roles.length} role{roles.length !== 1 ? "s" : ""} in this tenant. System roles cannot be modified.
       </p>
 
       {/* create role */}
-      <div
-        style={{
-          background: "#f8fafc",
-          border: "1px solid #e2e8f0",
-          borderRadius: 8,
-          padding: 16,
-          marginBottom: 24,
-        }}
-      >
-        <h3 style={{ margin: "0 0 12px", fontSize: 14, color: "#475569" }}>Create New Role</h3>
-        <form onSubmit={handleCreate} style={{ display: "flex", gap: 8 }}>
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Create New Role</h3>
+        <form onSubmit={handleCreate} className="flex gap-2">
           <input
             value={newRoleName}
             onChange={(e) => setNewRoleName(e.target.value)}
             placeholder="e.g. billing-manager"
             pattern="^[a-z0-9-]+$"
             title="Lowercase letters, numbers, hyphens only"
-            style={{
-              flex: 1,
-              padding: "8px 12px",
-              border: "1px solid #e2e8f0",
-              borderRadius: 4,
-              fontSize: 14,
-            }}
+            className="flex-1 px-3 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
           />
           <button
             type="submit"
             disabled={creating || !newRoleName.trim()}
-            style={{
-              padding: "8px 16px",
-              background: "#0f172a",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: creating ? "not-allowed" : "pointer",
-              fontWeight: 500,
-            }}
+            className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-md hover:bg-slate-800 disabled:opacity-50"
           >
             {creating ? "Creating..." : "Create"}
           </button>
         </form>
-        <p style={{ margin: "8px 0 0", fontSize: 12, color: "#94a3b8" }}>Lowercase letters, numbers, hyphens only</p>
+        <p className="text-xs text-slate-400 mt-2">Lowercase letters, numbers, hyphens only</p>
       </div>
 
-      {/* roles list */}
       {isLoading ? (
-        <div style={{ color: "#94a3b8" }}>Loading roles...</div>
+        <div className="text-slate-400 text-sm">Loading roles...</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="space-y-3">
           {roles.map((role) => {
             const isExpanded = expanded === role.id;
             const currentPerms = role.permissions?.map((p) => p.name) ?? [];
             const availablePerms = PERMISSION_VALUES.filter((p) => !currentPerms.includes(p));
 
             return (
-              <div
-                key={role.id}
-                style={{
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                }}
-              >
-                {/* role header */}
+              <div key={role.id} className="border border-slate-200 rounded-lg overflow-hidden">
+                {/* header */}
                 <div
                   onClick={() => setExpanded(isExpanded ? null : role.id)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "12px 16px",
-                    background: isExpanded ? "#f8fafc" : "white",
-                    cursor: "pointer",
-                    userSelect: "none",
-                  }}
+                  className={`flex items-center justify-between px-4 py-3 cursor-pointer select-none ${
+                    isExpanded ? "bg-slate-50" : "bg-white hover:bg-slate-50"
+                  }`}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontWeight: 600, fontSize: 15 }}>{role.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-900">{role.name}</span>
                     {role.isSystem && (
-                      <span
-                        style={{
-                          padding: "1px 8px",
-                          background: "#fef9c3",
-                          color: "#854d0e",
-                          borderRadius: 9999,
-                          fontSize: 11,
-                          fontWeight: 500,
-                        }}
-                      >
+                      <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
                         system
                       </span>
                     )}
-                    <span style={{ color: "#94a3b8", fontSize: 13 }}>
+                    <span className="text-slate-400 text-xs">
                       {currentPerms.length} permission{currentPerms.length !== 1 ? "s" : ""}
                     </span>
                   </div>
-                  <span style={{ color: "#94a3b8", fontSize: 18 }}>{isExpanded ? "−" : "+"}</span>
+                  <span className="text-slate-400 text-lg">{isExpanded ? "−" : "+"}</span>
                 </div>
 
-                {/* expanded permissions panel */}
+                {/* expanded panel */}
                 {isExpanded && (
-                  <div
-                    style={{
-                      padding: 16,
-                      borderTop: "1px solid #e2e8f0",
-                      background: "white",
-                    }}
-                  >
-                    {/* current permissions */}
-                    <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: "#475569" }}>
+                  <div className="px-4 py-4 border-t border-slate-200 bg-white">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
                       Current Permissions
                     </p>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-                      {currentPerms.length === 0 && (
-                        <span style={{ color: "#94a3b8", fontSize: 13 }}>None assigned</span>
-                      )}
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {currentPerms.length === 0 && <span className="text-slate-400 text-xs">None assigned</span>}
                       {currentPerms.map((perm) => (
                         <span
                           key={perm}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            padding: "3px 10px",
-                            background: "#f1f5f9",
-                            borderRadius: 4,
-                            fontSize: 12,
-                            fontFamily: "monospace",
-                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-xs font-mono"
                         >
                           {perm}
                           {!role.isSystem && (
                             <button
                               onClick={() => handleRemovePerm(role.id, perm)}
                               disabled={loadingPerm === `remove-${role.id}-${perm}`}
+                              className="text-slate-400 hover:text-red-500 leading-none"
                               title="Remove permission"
-                              style={{
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                color: "#94a3b8",
-                                padding: "0 2px",
-                                fontSize: 14,
-                                lineHeight: 1,
-                              }}
                             >
                               ×
                             </button>
@@ -202,28 +131,18 @@ export function RolesPage() {
                       ))}
                     </div>
 
-                    {/* add permission — only for non-system roles */}
                     {!role.isSystem && availablePerms.length > 0 && (
                       <>
-                        <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: "#475569" }}>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
                           Add Permission
                         </p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        <div className="flex flex-wrap gap-1.5">
                           {availablePerms.map((perm) => (
                             <button
                               key={perm}
                               onClick={() => handleAssignPerm(role.id, perm)}
                               disabled={loadingPerm === `add-${role.id}-${perm}`}
-                              style={{
-                                padding: "3px 10px",
-                                background: "white",
-                                border: "1px dashed #cbd5e1",
-                                borderRadius: 4,
-                                fontSize: 12,
-                                fontFamily: "monospace",
-                                cursor: "pointer",
-                                color: "#475569",
-                              }}
+                              className="px-2 py-0.5 border border-dashed border-slate-300 rounded text-xs font-mono text-slate-500 hover:bg-slate-50 disabled:opacity-50"
                             >
                               + {perm}
                             </button>
@@ -232,9 +151,7 @@ export function RolesPage() {
                       </>
                     )}
 
-                    {role.isSystem && (
-                      <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>System roles cannot be modified.</p>
-                    )}
+                    {role.isSystem && <p className="text-xs text-slate-400">System roles cannot be modified.</p>}
                   </div>
                 )}
               </div>
