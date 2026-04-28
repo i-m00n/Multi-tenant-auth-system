@@ -7,7 +7,7 @@ interface Props {
   testLabel?: string;
 }
 
-export function RateLimitButton({ onTrigger, label, testLabel = "Test Rate Limit" }: Props) {
+export function RateLimitButton({ onTrigger, label, testLabel }: Props) {
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [isTesting, setIsTesting] = useState(false);
 
@@ -22,9 +22,7 @@ export function RateLimitButton({ onTrigger, label, testLabel = "Test Rate Limit
     try {
       await onTrigger();
     } catch (e: unknown) {
-      if (e instanceof RateLimitError) {
-        setRetryAfter(e.retryAfter);
-      }
+      if (e instanceof RateLimitError) setRetryAfter(e.retryAfter);
     } finally {
       setIsTesting(false);
     }
@@ -32,16 +30,7 @@ export function RateLimitButton({ onTrigger, label, testLabel = "Test Rate Limit
 
   if (retryAfter !== null && retryAfter > 0) {
     return (
-      <div
-        style={{
-          padding: "8px 16px",
-          background: "#fee2e2",
-          color: "#dc2626",
-          borderRadius: 4,
-          display: "inline-block",
-          fontWeight: 500,
-        }}
-      >
+      <div className="inline-block px-4 py-2 bg-red-50 text-red-600 rounded-md text-sm font-medium">
         Rate limited — retry in {retryAfter}s
       </div>
     );
@@ -51,15 +40,9 @@ export function RateLimitButton({ onTrigger, label, testLabel = "Test Rate Limit
     <button
       onClick={handleTest}
       disabled={isTesting}
-      style={{
-        padding: "8px 16px",
-        background: "#f1f5f9",
-        border: "1px solid #cbd5e1",
-        borderRadius: 4,
-        cursor: isTesting ? "not-allowed" : "pointer",
-      }}
+      className="px-4 py-2 bg-slate-100 border border-slate-200 rounded-md text-sm text-slate-700 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {isTesting ? "Testing..." : testLabel || label}
+      {isTesting ? "Testing..." : (testLabel ?? label)}
     </button>
   );
 }

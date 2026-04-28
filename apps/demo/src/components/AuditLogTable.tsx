@@ -1,83 +1,54 @@
-import type { AuditLogResponse } from "../types";
+import type { AuditLogResponse } from "@auth-moon/sdk";
 
-const ACTION_COLORS: Record<string, { bg: string; color: string }> = {
-  "auth.login.success": { bg: "#dcfce7", color: "#16a34a" },
-  "auth.login.failed": { bg: "#fee2e2", color: "#dc2626" },
-  "auth.logout": { bg: "#f1f5f9", color: "#475569" },
-  "auth.token.replay": { bg: "#fee2e2", color: "#dc2626" },
-  "auth.token.refreshed": { bg: "#eff6ff", color: "#2563eb" },
-  "user.registered": { bg: "#f0fdf4", color: "#16a34a" },
-  "rbac.role.assigned": { bg: "#faf5ff", color: "#7c3aed" },
-  "rbac.role.removed": { bg: "#fff7ed", color: "#c2410c" },
-  "rbac.role.created": { bg: "#faf5ff", color: "#7c3aed" },
+const ACTION_COLORS: Record<string, string> = {
+  "auth.login.success": "bg-green-100 text-green-700",
+  "auth.login.failed": "bg-red-100 text-red-700",
+  "auth.logout": "bg-slate-100 text-slate-600",
+  "auth.token.replay": "bg-red-100 text-red-700",
+  "auth.token.refreshed": "bg-blue-100 text-blue-700",
+  "user.registered": "bg-emerald-100 text-emerald-700",
+  "rbac.role.assigned": "bg-purple-100 text-purple-700",
+  "rbac.role.removed": "bg-orange-100 text-orange-700",
+  "rbac.role.created": "bg-purple-100 text-purple-700",
+  "rbac.permission.removed": "bg-orange-100 text-orange-700",
 };
 
 export function AuditLogTable({ logs }: { logs: AuditLogResponse[] }) {
   if (logs.length === 0) {
-    return <div style={{ padding: 32, textAlign: "center", color: "#94a3b8" }}>No audit logs found.</div>;
+    return <div className="py-12 text-center text-slate-400 text-sm">No audit logs found.</div>;
   }
 
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+    <table className="w-full border-collapse text-sm">
       <thead>
-        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-          <th style={th}>Time</th>
-          <th style={th}>Action</th>
-          <th style={th}>User</th>
-          <th style={th}>IP</th>
-          <th style={th}>Details</th>
+        <tr className="bg-slate-50 border-b-2 border-slate-200">
+          <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Time</th>
+          <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Action</th>
+          <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">User</th>
+          <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">IP</th>
+          <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Details</th>
         </tr>
       </thead>
       <tbody>
         {logs.map((log) => {
           const isReplay = (log.metadata as Record<string, unknown>)?.severity === "high";
-          const colors = ACTION_COLORS[log.action] ?? { bg: "white", color: "#0f172a" };
+          const colorClass = ACTION_COLORS[log.action] ?? "bg-slate-100 text-slate-700";
 
           return (
-            <tr
-              key={log.id}
-              style={{
-                borderBottom: "1px solid #f1f5f9",
-                background: isReplay ? "#fff0f0" : "white",
-              }}
-            >
-              <td style={{ ...td, color: "#64748b", whiteSpace: "nowrap" }}>
+            <tr key={log.id} className={`border-b border-slate-100 ${isReplay ? "bg-red-50" : "bg-white"}`}>
+              <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap text-xs">
                 {new Date(log.createdAt).toLocaleString()}
               </td>
-              <td style={td}>
-                <span
-                  style={{
-                    padding: "2px 8px",
-                    borderRadius: 4,
-                    fontSize: 12,
-                    fontFamily: "monospace",
-                    fontWeight: 500,
-                    background: colors.bg,
-                    color: colors.color,
-                  }}
-                >
-                  {log.action}
-                </span>
+              <td className="px-4 py-2.5">
+                <span className={`px-2 py-0.5 rounded text-xs font-mono font-medium ${colorClass}`}>{log.action}</span>
               </td>
-              <td style={{ ...td, color: "#64748b", fontFamily: "monospace", fontSize: 12 }}>
+              <td className="px-4 py-2.5 font-mono text-xs text-slate-500">
                 {log.userId ? log.userId.slice(0, 8) + "..." : "—"}
               </td>
-              <td style={{ ...td, color: "#64748b", fontFamily: "monospace", fontSize: 12 }}>{log.ipAddress ?? "—"}</td>
-              <td style={td}>
+              <td className="px-4 py-2.5 font-mono text-xs text-slate-500">{log.ipAddress ?? "—"}</td>
+              <td className="px-4 py-2.5">
                 {isReplay && (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: "2px 8px",
-                      background: "#fee2e2",
-                      color: "#dc2626",
-                      borderRadius: 4,
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}
-                  >
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-semibold">
                     ⚠ Replay attack detected
                   </span>
                 )}
@@ -89,16 +60,3 @@ export function AuditLogTable({ logs }: { logs: AuditLogResponse[] }) {
     </table>
   );
 }
-
-const th: React.CSSProperties = {
-  padding: "10px 16px",
-  textAlign: "left",
-  fontWeight: 600,
-  fontSize: 13,
-  color: "#475569",
-};
-
-const td: React.CSSProperties = {
-  padding: "10px 16px",
-  verticalAlign: "middle",
-};

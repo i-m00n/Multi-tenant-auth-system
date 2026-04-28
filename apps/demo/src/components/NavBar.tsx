@@ -15,82 +15,54 @@ export function NavBar() {
 
   const isActive = (path: string) => location.pathname === `/${tenant}/${path}`;
 
-  const navLink = (path: string): React.CSSProperties => ({
-    cursor: "pointer",
-    padding: "4px 10px",
-    borderRadius: 4,
-    fontSize: 14,
-    fontWeight: isActive(path) ? 600 : 400,
-    color: isActive(path) ? "#0f172a" : "#475569",
-    background: isActive(path) ? "#f1f5f9" : "transparent",
-    textDecoration: "none",
-  });
+  // Helper to generate dynamic classes
+  const getNavLinkClass = (path: string) => {
+    const activeStyles = isActive(path)
+      ? "font-semibold text-slate-900 bg-slate-100"
+      : "font-normal text-slate-600 bg-transparent hover:bg-slate-50";
+
+    return `cursor-pointer px-2.5 py-1 rounded text-sm transition-colors ${activeStyles}`;
+  };
 
   return (
-    <nav
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 4,
-        padding: "12px 24px",
-        borderBottom: "1px solid #e2e8f0",
-        marginBottom: 24,
-        marginLeft: -24,
-        marginRight: -24,
-        marginTop: -24,
-      }}
-    >
-      {/* tenant name / home */}
+    <nav className="flex items-center gap-1 px-6 py-3 border-b border-slate-200 mb-6 -mx-6 -mt-6">
+      {/* Tenant Branding */}
       <span
         onClick={() => navigate(`/${tenant}/dashboard`)}
-        style={{
-          fontWeight: 700,
-          fontSize: 15,
-          color: "#0f172a",
-          cursor: "pointer",
-          marginRight: 12,
-          letterSpacing: "-0.3px",
-        }}
+        className="font-bold text-[15px] text-slate-900 cursor-pointer mr-3 tracking-tight"
       >
         {tenant}
       </span>
 
-      <span onClick={() => navigate(`/${tenant}/dashboard`)} style={navLink("dashboard")}>
+      {/* Nav Items */}
+      <span onClick={() => navigate(`/${tenant}/dashboard`)} className={getNavLinkClass("dashboard")}>
         Dashboard
       </span>
 
       <PermissionGate permission="user:read">
-        <span onClick={() => navigate(`/${tenant}/users`)} style={navLink("users")}>
+        <span onClick={() => navigate(`/${tenant}/users`)} className={getNavLinkClass("users")}>
           Users
         </span>
       </PermissionGate>
 
       <PermissionGate permission="role:read">
-        <span onClick={() => navigate(`/${tenant}/roles`)} style={navLink("roles")}>
+        <span onClick={() => navigate(`/${tenant}/roles`)} className={getNavLinkClass("roles")}>
           Roles
         </span>
       </PermissionGate>
 
       <PermissionGate permission="audit:read">
-        <span onClick={() => navigate(`/${tenant}/audit`)} style={navLink("audit")}>
+        <span onClick={() => navigate(`/${tenant}/audit`)} className={getNavLinkClass("audit")}>
           Audit Logs
         </span>
       </PermissionGate>
 
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontSize: 13, color: "#64748b" }}>{user?.email}</span>
+      {/* User Info & Logout */}
+      <div className="ml-auto flex items-center gap-3">
+        <span className="text-xs text-slate-500">{user?.email}</span>
         <button
           onClick={handleLogout}
-          style={{
-            padding: "6px 14px",
-            background: "white",
-            border: "1px solid #e2e8f0",
-            borderRadius: 4,
-            cursor: "pointer",
-            fontSize: 13,
-            color: "#475569",
-            fontWeight: 500,
-          }}
+          className="px-3.5 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-600 font-medium hover:bg-slate-50 transition-colors shadow-sm"
         >
           Logout
         </button>

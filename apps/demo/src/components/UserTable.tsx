@@ -1,102 +1,80 @@
 import { useState } from "react";
-import type { UserResponse, RoleResponse } from "../types";
+import type { UserResponse, RoleResponse } from "@auth-moon/sdk";
 
 interface Props {
   users: UserResponse[];
   roles: RoleResponse[];
   onAssignRole: (userId: string, roleId: string) => Promise<void>;
   onRemoveRole: (userId: string, roleId: string) => Promise<void>;
+  onDeleteUser: (userId: string) => Promise<void>;
 }
 
-export function UserTable({ users, roles, onAssignRole, onRemoveRole }: Props) {
+export function UserTable({ users, roles, onAssignRole, onRemoveRole, onDeleteUser }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   const handle = async (fn: () => Promise<void>, key: string) => {
     setLoading(key);
     try {
       await fn();
-    } catch (e: unknown) {
-      console.error("Action failed:", e);
-      alert(e instanceof Error ? e.message : "Action failed");
     } finally {
       setLoading(null);
     }
   };
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-            <th style={th}>Email</th>
-            <th style={th}>Status</th>
-            <th style={th}>Current Roles</th>
-            <th style={th}>Add Role</th>
+          <tr className="bg-slate-50 border-b-2 border-slate-200">
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Email</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Status</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Current Roles</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Add Role</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Actions</th>
           </tr>
         </thead>
         <tbody>
           {users.map((user) => (
-            <tr key={user.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-              <td style={td}>{user.email}</td>
+            <tr key={user.id} className="border-b border-slate-100">
+              <td className="px-4 py-3 text-slate-700">{user.email}</td>
 
-              <td style={td}>
+              <td className="px-4 py-3">
                 <span
-                  style={{
-                    padding: "2px 10px",
-                    borderRadius: 9999,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    background: user.isActive ? "#dcfce7" : "#fee2e2",
-                    color: user.isActive ? "#16a34a" : "#dc2626",
-                  }}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    user.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                  }`}
                 >
                   {user.isActive ? "Active" : "Inactive"}
                 </span>
               </td>
 
-              <td style={td}>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-1.5">
                   {user.roles?.length ? (
                     user.roles.map((role) => (
                       <span
                         key={role.id}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          padding: "2px 8px",
-                          background: "#f1f5f9",
-                          borderRadius: 4,
-                          fontSize: 12,
-                          fontFamily: "monospace",
-                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded text-xs font-mono"
                       >
                         {role.name}
                         <button
                           onClick={() => handle(() => onRemoveRole(user.id, role.id), `remove-${user.id}-${role.id}`)}
                           disabled={loading === `remove-${user.id}-${role.id}`}
+                          className="text-slate-400 hover:text-red-500 leading-none"
                           title="Remove role"
-                          style={{
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            color: "#94a3b8",
-                            padding: "0 2px",
-                            fontSize: 14,
-                            lineHeight: 1,
-                          }}
                         >
                           ×
                         </button>
                       </span>
                     ))
                   ) : (
-                    <span style={{ color: "#94a3b8", fontSize: 12 }}>No roles</span>
+                    <span className="text-slate-400 text-xs">No roles</span>
                   )}
                 </div>
               </td>
 
-              <td style={td}>
+              <td className="px-4 py-3">
                 <select
                   value=""
                   disabled={!!loading}
@@ -106,14 +84,7 @@ export function UserTable({ users, roles, onAssignRole, onRemoveRole }: Props) {
                       e.target.value = "";
                     }
                   }}
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: 4,
-                    border: "1px solid #e2e8f0",
-                    fontSize: 13,
-                    color: "#64748b",
-                    cursor: "pointer",
-                  }}
+                  className="px-2 py-1.5 border border-slate-200 rounded text-xs text-slate-500 bg-white"
                 >
                   <option value="" disabled>
                     Add role...
@@ -127,6 +98,35 @@ export function UserTable({ users, roles, onAssignRole, onRemoveRole }: Props) {
                     ))}
                 </select>
               </td>
+
+              <td className="px-4 py-3">
+                {user.isActive &&
+                  (confirming === user.id ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500">Sure?</span>
+                      <button
+                        onClick={() => {
+                          setConfirming(null);
+                          handle(() => onDeleteUser(user.id), `delete-${user.id}`);
+                        }}
+                        className="text-xs text-red-600 font-medium hover:underline"
+                      >
+                        Yes
+                      </button>
+                      <button onClick={() => setConfirming(null)} className="text-xs text-slate-400 hover:underline">
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirming(user.id)}
+                      disabled={loading === `delete-${user.id}`}
+                      className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-40"
+                    >
+                      Deactivate
+                    </button>
+                  ))}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -134,16 +134,3 @@ export function UserTable({ users, roles, onAssignRole, onRemoveRole }: Props) {
     </div>
   );
 }
-
-const th: React.CSSProperties = {
-  padding: "10px 16px",
-  textAlign: "left",
-  fontWeight: 600,
-  fontSize: 13,
-  color: "#475569",
-};
-
-const td: React.CSSProperties = {
-  padding: "12px 16px",
-  verticalAlign: "middle",
-};

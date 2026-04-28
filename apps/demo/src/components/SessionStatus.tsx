@@ -13,91 +13,45 @@ export function SessionStatus() {
   const isExpiringSoon = secondsLeft !== null && secondsLeft <= 60;
 
   return (
-    <div
-      style={{
-        border: "1px solid #e2e8f0",
-        borderRadius: 8,
-        padding: 16,
-        maxWidth: 320,
-      }}
-    >
-      <h3 style={{ margin: "0 0 12px" }}>Session Status</h3>
+    <div className="border border-slate-200 rounded-lg p-4">
+      <h3 className="text-sm font-semibold text-slate-700 mb-3">Session Status</h3>
 
-      <div style={{ marginBottom: 8 }}>
-        <span
-          style={{
-            display: "inline-block",
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: secondsLeft === null ? "#94a3b8" : "#22c55e",
-            marginRight: 8,
-          }}
-        />
-        {secondsLeft === null ? "No active session" : `Token expires in `}
-        {secondsLeft !== null && (
-          <span
-            style={{
-              fontWeight: "bold",
-              color: isExpiringSoon ? "#ef4444" : "#0f172a",
-            }}
-          >
-            {formatTime(secondsLeft)}
+      <div className="flex items-center gap-2 mb-2 text-sm">
+        <span className={`w-2 h-2 rounded-full ${secondsLeft === null ? "bg-slate-400" : "bg-green-500"}`} />
+        {secondsLeft === null ? (
+          <span className="text-slate-500">No active session</span>
+        ) : (
+          <span className="text-slate-600">
+            Token expires in{" "}
+            <span className={`font-mono font-bold ${isExpiringSoon ? "text-red-500" : "text-slate-900"}`}>
+              {formatTime(secondsLeft)}
+            </span>
           </span>
         )}
       </div>
 
       {justRefreshed && (
-        <div
-          style={{
-            background: "#f0fdf4",
-            color: "#16a34a",
-            padding: "6px 10px",
-            borderRadius: 4,
-            fontSize: 13,
-            marginBottom: 8,
-          }}
-        >
-          ✓ Token refreshed silently
-        </div>
+        <div className="text-xs px-2 py-1.5 rounded bg-green-50 text-green-700 mb-2">✓ Token refreshed silently</div>
       )}
 
       {isExpiringSoon && !justRefreshed && (
-        <div
-          style={{
-            background: "#fef9c3",
-            color: "#854d0e",
-            padding: "6px 10px",
-            borderRadius: 4,
-            fontSize: 13,
-            marginBottom: 8,
-          }}
-        >
+        <div className="text-xs px-2 py-1.5 rounded bg-yellow-50 text-yellow-800 mb-2">
           ⚡ Proactive refresh in progress...
         </div>
       )}
 
-      <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
+      <div className="text-xs text-slate-400 mb-3">
         Tab sync: BroadcastChannel{" "}
         {typeof BroadcastChannel !== "undefined" ? (
-          <span style={{ color: "#16a34a" }}>● active</span>
+          <span className="text-green-600">● active</span>
         ) : (
-          <span style={{ color: "#ef4444" }}>● unavailable</span>
+          <span className="text-red-500">● unavailable</span>
         )}
       </div>
 
       <button
         onClick={logout}
-        style={{
-          width: "100%",
-          padding: "8px 12px",
-          background: "#fee2e2",
-          color: "#dc2626",
-          border: "none",
-          borderRadius: 4,
-          cursor: "pointer",
-          fontWeight: 500,
-        }}
+        className="w-full py-2 px-3 bg-red-50 text-red-600 text-sm font-medium rounded-md hover:bg-red-100"
       >
         Logout All Tabs
       </button>
