@@ -11,6 +11,7 @@ export const getTypeOrmConfig = (): DataSourceOptions => ({
   entities: [__dirname + '/../modules/**/*.entity.{ts,js}'],
   migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
 
-  synchronize: true,
+  synchronize: false,
+  migrationsRun: true,
   logging: true,
 });
