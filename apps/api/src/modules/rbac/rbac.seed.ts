@@ -38,13 +38,15 @@ export class RbacSeed {
         roleRepo.create({ name: 'admin', tenantId, isSystem: true }),
       );
 
-      await manager.query(
-        `INSERT INTO role_permissions (role_id, permission_id)
-         SELECT $1, id FROM permissions
-         ON CONFLICT DO NOTHING`,
-        [adminRole.id],
-      );
+      for (const perm of allPermissions) {
+        await manager.query(
+          `INSERT INTO role_permissions (role_id, permission_id)
+           VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [adminRole.id, perm.id],
+        );
+      }
 
+      // viewer role — gets read-only permissions
       const viewerRole = await roleRepo.save(
         roleRepo.create({ name: 'viewer', tenantId, isSystem: true }),
       );

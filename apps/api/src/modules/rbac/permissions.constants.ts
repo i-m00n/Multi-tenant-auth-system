@@ -5,6 +5,7 @@ export const PERMISSIONS = {
   ROLE_READ: 'role:read',
   ROLE_ASSIGN: 'role:assign',
   TENANT_READ: 'tenant:read',
+  TENANT_CREATE: 'tenant:create',
   TENANT_UPDATE: 'tenant:update',
   AUDIT_READ: 'audit:read',
 } as const;
