@@ -19,6 +19,7 @@ import {
   USER_EVENTS,
   UserRegisteredEvent,
 } from 'src/common/events/user.events';
+import { TenantRepository } from '@modules/tenant/tenant.repository';
 
 interface Argon2Config {
   memoryCost: number;
@@ -36,6 +37,7 @@ export class UserService {
     private rbacSeed: RbacSeed,
     private rbacService: RbacService,
     private configService: ConfigService,
+    private tenantRepository: TenantRepository,
   ) {}
 
   async register(
@@ -98,6 +100,18 @@ export class UserService {
     });
   }
 
+  async registerWithSlug(
+    dto: { email: string; password: string },
+    slug: string,
+  ): Promise<void> {
+    const tenant = await this.tenantRepository.findBySlug(slug);
+    if (!tenant) throw new Error(`Tenant ${slug} not found`);
+
+    await this.tenantContext.run(tenant.id, () =>
+      this.register(dto, '127.0.0.1', 'demo-seeder'),
+    );
+  }
+
   async validatePassword(
     email: string,
     password: string,
@@ -146,5 +160,9 @@ export class UserService {
       isActive: user.isActive,
       createdAt: user.createdAt,
     };
+  }
+
+  async deactivate(userId: string): Promise<void> {
+    await this.userRepository.update({ id: userId }, { isActive: false });
   }
 }

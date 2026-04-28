@@ -1,4 +1,13 @@
-import { Controller, Post, Body, HttpCode, Req, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  Req,
+  Get,
+  Delete,
+  Param,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import * as userSchemas from './user.schemas';
@@ -43,5 +52,24 @@ export class UsersController {
   @RequirePermissions(PERMISSIONS.USER_READ)
   async getAll(@CurrentUser() user: tokenService.JwtPayload) {
     return this.userService.findAllByTenant(user.tenantId);
+  }
+
+  @Post()
+  @RequirePermissions(PERMISSIONS.USER_CREATE)
+  async create(
+    @Body(new ZodValidationPipe(userSchemas.RegisterUserSchema))
+    dto: userSchemas.RegisterUserDto,
+    @Req() req: express.Request,
+  ) {
+    const ip = req.ip ?? '';
+    const ua = req.headers['user-agent'] ?? '';
+    return this.userService.register(dto, ip, ua);
+  }
+
+  @Delete(':userId')
+  @HttpCode(204)
+  @RequirePermissions(PERMISSIONS.USER_DELETE)
+  async delete(@Param('userId') userId: string) {
+    return this.userService.deactivate(userId);
   }
 }
