@@ -1,21 +1,18 @@
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { UsersPage } from "./pages/UsersPage";
 import { RolesPage } from "./pages/RolesPage";
 import { AuditPage } from "./pages/AuditPage";
+import { PlatformLoginPage } from "./pages/PlatformLoginPage";
+import { TenantsPage } from "./pages/TenantsPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { UsersPage } from "./pages/UsersPage";
-import { RegisterPage } from "./pages/RegisterPage";
 
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Navigate to="/acme/login" replace />,
-  },
-  {
-    path: "/:tenant/login",
-    element: <LoginPage />,
-  },
+  { path: "/", element: <Navigate to="/acme/login" replace /> },
+
+  { path: "/:tenant/login", element: <LoginPage /> },
   { path: "/:tenant/register", element: <RegisterPage /> },
   {
     path: "/:tenant/dashboard",
@@ -49,10 +46,9 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
-  {
-    path: "*",
-    element: <Navigate to="/acme/login" replace />,
-  },
+
+  { path: "/platform/login", element: <PlatformLoginPage /> },
+  { path: "/platform/tenants", element: <TenantsPage /> },
 ]);
 
 export function AppRouter() {
