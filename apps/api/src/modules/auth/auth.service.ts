@@ -11,6 +11,7 @@ import {
   LoginSuccessEvent,
   LogoutEvent,
 } from 'src/common/events/auth.events';
+import { TenantRepository } from '@modules/tenant/tenant.repository';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private tokenService: TokenService,
     private tenantContext: TenantContext,
     private eventEmitter: EventEmitter2,
+    private tenantRepository: TenantRepository,
   ) {}
 
   async login(dto: LoginDto, ipAddress: string, userAgent: string) {
@@ -66,6 +68,21 @@ export class AuthService {
     );
 
     return { accessToken, refreshToken, user };
+  }
+
+  async loginWithSlug(
+    email: string,
+    password: string,
+    slug: string,
+    ip: string,
+    userAgent: string,
+  ): Promise<void> {
+    const tenant = await this.tenantRepository.findBySlug(slug);
+    if (!tenant) throw new Error(`Tenant ${slug} not found`);
+
+    await this.tenantContext.run(tenant.id, () =>
+      this.login({ email, password }, ip, userAgent),
+    );
   }
 
   async refresh(rawRefreshToken: string, ipAddress: string, userAgent: string) {

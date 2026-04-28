@@ -22,11 +22,11 @@ import { TenantModule } from '../tenant/tenant.module';
         secret: config.get<string>('jwt.secret'),
       }),
     }),
-    UserModule, // imports UserService, UserRepository
-    TenantModule, // imports TenantContext
+    UserModule,
+    TenantModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, TokenService, JwtStrategy, RefreshTokenRepository],
-  exports: [TokenService],
+  exports: [AuthService, TokenService],
 })
 export class AuthModule {}
