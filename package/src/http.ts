@@ -33,11 +33,11 @@ export class HttpClient {
     if (tenantScoped) {
       return `${this.baseUrl}/${this.tenantSlug}/api${path}`;
     }
-    return `${this.baseUrl}${path}`;
+    return `${this.baseUrl}/platform/api${path}`;
   }
 
-  async get<T>(path: string, params?: Record<string, unknown>): Promise<T> {
-    const url = new URL(this.url(path));
+  async get<T>(path: string, params?: Record<string, unknown>, tenantScoped = true): Promise<T> {
+    const url = new URL(this.url(path, tenantScoped));
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
         if (v !== undefined && v !== null) {
@@ -56,6 +56,20 @@ export class HttpClient {
     });
   }
 
+  async patch<T>(path: string, body?: unknown, tenantScoped = true): Promise<T> {
+    return this.request<T>(this.url(path, tenantScoped), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  async delete<T>(path: string, tenantScoped = true): Promise<T> {
+    return this.request<T>(this.url(path, tenantScoped), {
+      method: "DELETE",
+    });
+  }
+
   async postPublic<T>(path: string, body?: unknown): Promise<T> {
     return this.requestRaw<T>(this.url(path), {
       method: "POST",
@@ -63,10 +77,6 @@ export class HttpClient {
       body: body ? JSON.stringify(body) : undefined,
       credentials: "include",
     });
-  }
-
-  async delete<T>(path: string): Promise<T> {
-    return this.request<T>(this.url(path), { method: "DELETE" });
   }
 
   private async request<T>(url: string, init: RequestInit): Promise<T> {
@@ -78,7 +88,7 @@ export class HttpClient {
 
     const response = await fetch(url, {
       ...init,
-      credentials: "include", // always send cookies
+      credentials: "include",
       headers: {
         ...init.headers,
         Authorization: `Bearer ${token}`,
@@ -102,7 +112,7 @@ export class HttpClient {
   private async refreshToken(): Promise<string> {
     const response = await fetch(this.url("/auth/refresh"), {
       method: "POST",
-      credentials: "include", // sends httpOnly refresh token cookie
+      credentials: "include",
     });
 
     if (!response.ok) {

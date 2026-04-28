@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 // tenant
-
 export const CreateTenantSchema = z.object({
   name: z.string().min(2).max(100),
   slug: z
@@ -9,12 +8,17 @@ export const CreateTenantSchema = z.object({
     .min(2)
     .max(50)
     .regex(/^[a-z0-9-]+$/, "Slug must be lowercase letters, numbers, and hyphens only"),
+  adminEmail: z.email(),
+  adminPassword: z
+    .string()
+    .min(12, "Password must be at least 12 characters")
+    .regex(/[A-Z]/, "Must contain an uppercase letter")
+    .regex(/[0-9]/, "Must contain a number"),
 });
 
 export type CreateTenantDto = z.infer<typeof CreateTenantSchema>;
 
 // auth
-
 export const LoginSchema = z.object({
   email: z.email(),
   password: z.string().min(1, "Password is required"),
@@ -23,7 +27,6 @@ export const LoginSchema = z.object({
 export type LoginDto = z.infer<typeof LoginSchema>;
 
 // user
-
 export const RegisterUserSchema = z.object({
   email: z.email(),
   password: z
@@ -63,6 +66,7 @@ export const PERMISSION_VALUES = [
   "role:read",
   "role:assign",
   "tenant:read",
+  "tenant:create",
   "tenant:update",
   "audit:read",
 ] as const;
@@ -82,7 +86,6 @@ export const AssignRoleSchema = z.object({
 export type AssignRoleDto = z.infer<typeof AssignRoleSchema>;
 
 // audit
-
 export const AuditQuerySchema = z.object({
   userId: z.uuid().optional(),
   action: z.string().optional(),

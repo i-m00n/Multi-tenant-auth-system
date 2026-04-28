@@ -1,4 +1,5 @@
 export { createAuthClient, AuthClient, type AuthClientOptions } from "./client";
+export { createPlatformClient, PlatformClient, type PlatformClientOptions } from "./platform-client";
 
 export {
   SdkError,
@@ -19,6 +20,8 @@ export type {
   AuditLogResponse,
   PaginatedResponse,
   MessageResponse,
+  TenantResponse,
+  CreateTenantResponse,
 } from "./types/responses";
 
 export {
@@ -26,8 +29,10 @@ export {
   RegisterUserSchema,
   CreateRoleSchema,
   AuditQuerySchema,
+  CreateTenantSchema,
   PERMISSION_VALUES,
 } from "./types/schemas";
-export type { LoginDto, RegisterUserDto, CreateRoleDto, AuditQueryDto } from "./types/schemas";
+
+export type { LoginDto, RegisterUserDto, CreateRoleDto, AuditQueryDto, CreateTenantDto } from "./types/schemas";
 
 export type { AuditQueryParams } from "./modules/audit";

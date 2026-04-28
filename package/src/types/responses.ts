@@ -1,3 +1,19 @@
+// Tenants
+export interface TenantResponse {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateTenantResponse {
+  tenant: TenantResponse;
+  admin: { id: string; email: string };
+  roles: { adminRoleId: string };
+}
+
+// Users
 export interface UserResponse {
   id: string;
   email: string;
@@ -11,6 +27,7 @@ export interface MeResponse extends UserResponse {
   permissions: string[];
 }
 
+// Authentication
 export interface TokenResponse {
   accessToken: string;
   user: UserResponse;
@@ -20,6 +37,7 @@ export interface RefreshResponse {
   accessToken: string;
 }
 
+// Roles and Permissions
 export interface RoleResponse {
   id: string;
   name: string;
@@ -35,6 +53,7 @@ export interface PermissionResponse {
   action: string;
 }
 
+// Audit Logs
 export interface AuditLogResponse {
   id: string;
   tenantId: string;
@@ -48,6 +67,7 @@ export interface AuditLogResponse {
   createdAt: string;
 }
 
+// Generic Responses
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
