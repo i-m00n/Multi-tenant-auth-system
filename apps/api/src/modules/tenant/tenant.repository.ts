@@ -21,4 +21,16 @@ export class TenantRepository extends Repository<Tenant> {
     const tenant = this.create(dto);
     return this.save(tenant);
   }
+
+  findAll(): Promise<Tenant[]> {
+    return this.find({ order: { createdAt: 'ASC' } });
+  }
+
+  async deactivate(id: string): Promise<void> {
+    await this.update(id, { isActive: false });
+  }
+
+  async reactivate(id: string): Promise<void> {
+    await this.update(id, { isActive: true });
+  }
 }
