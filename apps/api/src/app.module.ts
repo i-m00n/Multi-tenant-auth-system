@@ -1,4 +1,9 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
@@ -17,6 +22,8 @@ import { RateLimitModule } from '@modules/rate-limit/rate-limit.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuditModule } from './modules/audit/audit.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { PlatformModule } from '@modules/platform/platform.module';
+import { DemoModule } from '@modules/demo/demo.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -38,11 +45,13 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     RbacModule,
     AuthModule,
     AuditModule,
+    PlatformModule,
     EventEmitterModule.forRoot({
       wildcard: false,
       delimiter: '.',
       global: true,
     }),
+    ...(process.env.NODE_ENV !== 'production' ? [DemoModule] : []),
   ],
   providers: [
     RlsSubscriber,
@@ -63,6 +72,9 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).forRoutes('*');
+    consumer
+      .apply(TenantMiddleware)
+      .exclude({ path: 'demo/seed', method: RequestMethod.POST })
+      .forRoutes('*');
   }
 }
