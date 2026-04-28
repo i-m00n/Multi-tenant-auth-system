@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { getsdk } from "../sdk";
+import { getSdk } from "../sdk";
 import type { AuditLogResponse, PaginatedResponse, AuditQueryParams } from "../types";
 
 export function useAudit() {
@@ -9,7 +9,7 @@ export function useAudit() {
   const fetchLogs = useCallback(async (params?: AuditQueryParams) => {
     setIsLoading(true);
     try {
-      const data = await getsdk().audit.getLogs(params);
+      const data = await getSdk().audit.getLogs(params);
       setResult(data);
     } finally {
       setIsLoading(false);

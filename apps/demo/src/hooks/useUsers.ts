@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getsdk } from "../sdk";
+import { getSdk } from "../sdk";
 import { ConflictError, type UserResponse } from "@auth-moon/sdk";
 
 export function useUsers() {
@@ -9,7 +9,7 @@ export function useUsers() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const data = await getsdk().users.getAll();
+      const data = await getSdk().users.getAll();
       setUsers(data);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load users");
@@ -25,7 +25,7 @@ export function useUsers() {
   const assignRole = useCallback(
     async (userId: string, roleId: string) => {
       try {
-        await getsdk().roles.assignRoleToUser(userId, roleId);
+        await getSdk().roles.assignRoleToUser(userId, roleId);
       } catch (e: unknown) {
         if (!(e instanceof ConflictError)) throw e;
       } finally {
@@ -37,11 +37,36 @@ export function useUsers() {
 
   const removeRole = useCallback(
     async (userId: string, roleId: string) => {
-      await getsdk().roles.removeRoleFromUser(userId, roleId);
+      await getSdk().roles.removeRoleFromUser(userId, roleId);
       await fetchUsers();
     },
     [fetchUsers],
   );
 
-  return { users, isLoading, error, assignRole, removeRole, refetch: fetchUsers };
+  const createUser = useCallback(
+    async (email: string, password: string) => {
+      await getSdk().users.create({ email, password });
+      await fetchUsers();
+    },
+    [fetchUsers],
+  );
+
+  const deleteUser = useCallback(
+    async (userId: string) => {
+      await getSdk().users.delete(userId);
+      await fetchUsers();
+    },
+    [fetchUsers],
+  );
+
+  return {
+    users,
+    isLoading,
+    error,
+    assignRole,
+    removeRole,
+    createUser,
+    deleteUser,
+    refetch: fetchUsers,
+  };
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { AuthContext } from "./authContext.types";
-import { getsdk } from "../sdk";
+import { getSdk } from "../sdk";
 import type { MeResponse } from "@auth-moon/sdk";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -8,7 +8,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const sdk = getsdk();
+    const sdk = getSdk();
     sdk.auth
       .initialize()
       .then(async (hasSession) => {
@@ -21,14 +21,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const sdk = getsdk();
+    const sdk = getSdk();
     await sdk.auth.login(email, password);
     const me = await sdk.users.getMe();
     setUser(me);
   }, []);
 
   const logout = useCallback(async () => {
-    await getsdk().auth.logout();
+    await getSdk().auth.logout();
     setUser(null);
   }, []);
 

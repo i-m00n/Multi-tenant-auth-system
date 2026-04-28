@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getsdk } from "../sdk";
+import { getSdk } from "../sdk";
 
 export function useTokenCountdown() {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -7,7 +7,7 @@ export function useTokenCountdown() {
 
   useEffect(() => {
     const tick = () => {
-      const expiresAt = getsdk().tokenExpiresAt;
+      const expiresAt = getSdk().tokenExpiresAt;
       if (!expiresAt) {
         setSecondsLeft(null);
         return;

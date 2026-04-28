@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getsdk } from "../sdk";
+import { getSdk } from "../sdk";
 import type { RoleResponse } from "../types";
 
 export function useRoles() {
@@ -9,7 +9,7 @@ export function useRoles() {
 
   const fetchRoles = useCallback(async () => {
     try {
-      const data = await getsdk().roles.getRoles();
+      const data = await getSdk().roles.getRoles();
       setRoles(data);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load roles");
@@ -23,14 +23,14 @@ export function useRoles() {
   }, [fetchRoles]);
 
   const createRole = useCallback(async (name: string) => {
-    const role = await getsdk().roles.createRole(name);
+    const role = await getSdk().roles.createRole(name);
     setRoles((prev) => [...prev, role]);
     return role;
   }, []);
 
   const assignPermission = useCallback(
     async (roleId: string, permission: string) => {
-      await getsdk().roles.assignPermission(roleId, permission);
+      await getSdk().roles.assignPermission(roleId, permission);
       await fetchRoles();
     },
     [fetchRoles],
@@ -38,7 +38,7 @@ export function useRoles() {
 
   const removePermission = useCallback(
     async (roleId: string, permission: string) => {
-      await getsdk().roles.removePermissionFromRole(roleId, permission);
+      await getSdk().roles.removePermissionFromRole(roleId, permission);
       await fetchRoles();
     },
     [fetchRoles],
