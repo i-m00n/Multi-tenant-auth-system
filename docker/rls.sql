@@ -1,3 +1,8 @@
+-- Reference only — not executed by docker-compose or the app.
+-- The policies that actually run live in the TypeORM migration:
+-- apps/api/src/database/migrations/1777074210241-RlsPolicies.ts
+-- Keep this file in sync with that migration if you edit either one.
+
 -- tenants
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenants FORCE ROW LEVEL SECURITY;

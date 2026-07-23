@@ -20,12 +20,26 @@ export class RlsSubscriber implements EntitySubscriberInterface {
   async beforeQuery(event: BeforeQueryEvent<any>): Promise<void> {
     if (this.isSetQuery(event.query) || !event.queryRunner) return;
     const tenantId = this.tenantContext?.getTenantId() ?? '';
-    await event.queryRunner.query(`SET app.current_tenant_id = '${tenantId}'`);
+    // is_local=true behaves like SET LOCAL (auto-resets at commit/rollback);
+    // is_local=false behaves like session-level SET and needs the manual
+    // reset in afterQuery below. set_config is parameterized — no string
+    // interpolation into the SQL.
+    const isLocal = event.queryRunner.isTransactionActive;
+    await event.queryRunner.query(
+      `SELECT set_config('app.current_tenant_id', $1, $2)`,
+      [tenantId, isLocal],
+    );
   }
 
   async afterQuery(event: AfterQueryEvent<any>): Promise<void> {
     if (this.isSetQuery(event.query) || !event.queryRunner) return;
-    await event.queryRunner.query(`SET app.current_tenant_id = ''`);
+    // inside a transaction, the SET LOCAL above already resets itself at
+    // commit/rollback — nothing to clean up here.
+    if (event.queryRunner.isTransactionActive) return;
+    await event.queryRunner.query(
+      `SELECT set_config('app.current_tenant_id', $1, false)`,
+      [''],
+    );
   }
 
   private isSetQuery(query: unknown): boolean {
@@ -34,6 +48,7 @@ export class RlsSubscriber implements EntitySubscriberInterface {
     return (
       normalized.startsWith('SET') ||
       normalized.startsWith('SELECT CURRENT_SETTING') ||
+      normalized.startsWith('SELECT SET_CONFIG') ||
       ['START TRANSACTION', 'BEGIN', 'COMMIT', 'ROLLBACK', 'SAVEPOINT'].some(
         (cmd) => normalized.startsWith(cmd),
       )

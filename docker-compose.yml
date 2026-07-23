@@ -31,14 +31,17 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: app_user
-      DB_PASSWORD: pass
+      # must match the password docker/init.sql uses to CREATE USER app_user
+      DB_PASS: pass
       DB_NAME: auth_db
-      JWT_SECRET: supersecret-which-should-be-long-and-secure
+      JWT_SECRET: ${JWT_SECRET:-supersecret-which-should-be-long-and-secure}
       JWT_ACCESS_TOKEN_EXPIRY: 15m
       JWT_REFRESH_TOKEN_EXPIRY_DAYS: 7
       ARGON2_MEMORY_COST: 65536
       ARGON2_TIME_COST: 3
       ARGON2_PARALLELISM: 4
+      PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-admin@platform.local}
+      PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-PlatformPass123!}
     depends_on:
       db:
         condition: service_healthy
