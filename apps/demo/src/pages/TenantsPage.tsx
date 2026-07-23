@@ -19,15 +19,28 @@ export function TenantsPage() {
   });
 
   useEffect(() => {
-    if (!getPlatformSdk().isAuthenticated) {
-      navigate("/platform/login");
-      return;
-    }
+    let cancelled = false;
+
     getPlatformSdk()
-      .tenants.list()
-      .then(setTenants)
-      .catch(() => navigate("/platform/login"))
-      .finally(() => setIsLoading(false));
+      .initialize()
+      .then(() => {
+        if (cancelled) return;
+        if (!getPlatformSdk().isAuthenticated) {
+          navigate("/platform/login");
+          return;
+        }
+        return getPlatformSdk()
+          .tenants.list()
+          .then(setTenants)
+          .catch(() => navigate("/platform/login"));
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
   const handleCreate = async (e: React.FormEvent) => {

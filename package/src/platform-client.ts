@@ -17,7 +17,7 @@ export class PlatformClient {
   constructor(options: PlatformClientOptions) {
     const onLogout = options.onLogout ?? (() => {});
 
-    this.tokenManager = new TokenManager();
+    this.tokenManager = new TokenManager("platform");
 
     const http = new HttpClient({
       baseUrl: options.baseUrl,

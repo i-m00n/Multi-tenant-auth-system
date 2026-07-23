@@ -13,10 +13,13 @@ export class TokenManager {
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private refreshPromise: Promise<string> | null = null;
   private channel: BroadcastChannel | null = null;
+  private readonly lockName: string;
 
-  constructor() {
+  constructor(channelKey: string) {
+    this.lockName = `auth_refresh_lock:${channelKey}`;
+
     if (typeof BroadcastChannel !== "undefined") {
-      this.channel = new BroadcastChannel("access_token_sync");
+      this.channel = new BroadcastChannel(`access_token_sync:${channelKey}`);
 
       this.channel.onmessage = (event: MessageEvent<BroadcastMessage>) => {
         const msg = event.data;
@@ -77,7 +80,7 @@ export class TokenManager {
     }
 
     if (typeof navigator !== "undefined" && navigator.locks) {
-      return navigator.locks.request("auth_refresh_lock", async () => {
+      return navigator.locks.request(this.lockName, async () => {
         if (!this.isExpired() && this.tokenData) {
           return this.tokenData.accessToken;
         }

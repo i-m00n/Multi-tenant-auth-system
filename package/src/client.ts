@@ -22,7 +22,7 @@ export class AuthClient {
   constructor(options: AuthClientOptions) {
     const onLogout = options.onLogout ?? (() => {});
 
-    this.tokenManager = new TokenManager();
+    this.tokenManager = new TokenManager(options.tenantSlug);
 
     const http = new HttpClient({
       baseUrl: options.baseUrl,
