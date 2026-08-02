@@ -5,6 +5,17 @@ applications, plus a TypeScript client SDK for consuming it. You run it against
 your own PostgreSQL database; there is no per-user billing and no third-party
 data custody.
 
+**At a glance:**
+
+- Each customer's data is kept separate by the database itself, not just by
+  application code — so a bug in a query can't accidentally leak one
+  customer's data to another.
+- Login sessions are protected against token theft: if a stolen session
+  token gets reused, the system detects it and shuts the whole session down.
+- Ships as a working backend, a TypeScript SDK to talk to it, and a demo app
+  to try every feature by hand — see it running with one command
+  (`docker compose up`).
+
 The repository is a monorepo with three parts:
 
 - **`apps/api`** — the NestJS authentication/authorization server. This is the
@@ -19,30 +30,50 @@ The repository is a monorepo with three parts:
 
 Every multi-tenant SaaS product needs the same building blocks: tenant
 isolation, login/session management, role-based permissions, and an audit
-trail. This project implements those building blocks with two properties that
-managed auth providers don't give you:
+trail. This project focuses on two design goals:
 
-- **Tenant isolation enforced at the database engine level**, not just in
-  application code, via PostgreSQL Row Level Security (RLS).
-- **Full data ownership** — everything lives in a Postgres database you
-  control.
+- **Database-enforced tenant isolation** using PostgreSQL Row Level Security
+  (RLS), not just application-code checks.
+- **Self-hosted deployment** with full ownership of the authentication data —
+  everything lives in a Postgres database you control.
+
+## Why I built this
+
+I built this to go deep on authentication and authorization — the part of a
+system most developers wire up with a library and never look at again. I
+wanted to actually understand the security decisions behind it: how tokens
+should be rotated and protected against theft, how tenant data should be
+isolated, and roughly how a provider like Auth0 or Clerk is built under the
+hood, instead of only ever consuming that as a black box.
+
+Multi-tenancy specifically interested me because it's not a SaaS niche — it's
+the architecture behind most B2B software that serves many organizations from
+one codebase: ERPs, CRMs, project-management tools, helpdesk platforms.
+Building the isolation and permission model myself, rather than trusting a
+managed provider to have gotten it right, was the only way to actually
+understand those trade-offs instead of taking them for granted.
 
 ## Architecture
 
-```
-Browser
-  │  fetch() + Authorization: Bearer <access token, 15 min JWT>
-  │  Cookie: refresh_token (httpOnly, 7 days)
-  ▼
-NestJS API
-  Guards (in order):   ThrottlerGuard → JwtAuthGuard → RbacGuard
-  Middleware:          TenantMiddleware (resolves :slug from the URL)
-  Request-scoped ctx:  AsyncLocalStorage (tenant id, set for the request lifetime)
-  TypeORM subscriber:  sets/resets the Postgres session variable used by RLS
-  ▼
-PostgreSQL 16
-  Row Level Security policies on every tenant-scoped table
-  Connects as a non-superuser role (RLS is bypassed for superusers/table owners)
+```mermaid
+flowchart TD
+    Browser["Browser<br/>Authorization: Bearer access token (15 min JWT)<br/>Cookie: refresh_token (httpOnly, 7 days)"]
+
+    subgraph API["NestJS API"]
+        direction TB
+        Throttler["ThrottlerGuard<br/>IP-based request budget"]
+        Tenant["TenantMiddleware<br/>resolves :slug to a tenant, opens AsyncLocalStorage context"]
+        Jwt["JwtAuthGuard<br/>verifies JWT + tenant match"]
+        Rbac["RbacGuard<br/>checks @RequirePermissions"]
+        Subscriber["TypeORM subscriber<br/>sets the Postgres session variable used by RLS"]
+
+        Throttler --> Tenant --> Jwt --> Rbac --> Subscriber
+    end
+
+    DB[("PostgreSQL 16<br/>Row Level Security on every tenant-scoped table<br/>connects as a non-superuser role")]
+
+    Browser --> Throttler
+    Subscriber --> DB
 ```
 
 ### Request lifecycle
@@ -76,6 +107,20 @@ For a request like `GET /acme/api/users`:
 No single layer is trusted alone — tenant isolation is enforced twice
 (application routing + database policy), and authentication/authorization are
 separate guards run in a fixed order.
+
+### The platform (super-admin) account
+
+There's no separate auth system for the account that manages tenants
+themselves. A migration seeds one reserved tenant row (slug `platform`, fixed
+id `00000000-0000-0000-0000-000000000000`) with an admin user whose role has
+every permission. Logging in as the platform admin resolves through the exact
+same `TenantMiddleware` → `JwtAuthGuard` → RLS path as any real tenant — the
+only different routes are tenant *management* itself
+([`platform-tenant.controller.ts`](apps/api/src/modules/platform/platform-tenant.controller.ts)),
+which are mounted on a flat `platform/api/tenants` prefix instead of
+`:tenant/api/...`, since creating/listing tenants is inherently cross-tenant.
+The JWT `tenantId` cross-check described above means a platform-issued token
+can't be replayed against a real tenant's routes, and vice versa.
 
 ### Session model
 
@@ -174,10 +219,10 @@ Every route after that is scoped under `/{slug}/api/...`, e.g.
   [`main.ts`](apps/api/src/main.ts) — update this before deploying anywhere
   else.
 
-## Known limitations
+## Known limitations & roadmap
 
-This is a working system, not a production-hardened one. In rough priority
-order:
+This is a working system, not a production-hardened one. The list below is
+both the current gaps and, in order, the plan for closing them:
 
 - No MFA.
 - Refresh tokens have no absolute session lifetime — a token rotated
